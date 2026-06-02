@@ -1,4 +1,4 @@
-import React from 'react';
+// React import removed (not required with the new JSX transform)
 
 function ServiceGrid() {
   const services = [

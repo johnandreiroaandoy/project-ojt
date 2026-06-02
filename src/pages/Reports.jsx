@@ -2,10 +2,10 @@ import React from 'react';
 
 function Reports() {
   const reportCategories = [
-    { title: "Annual Audit Reports", year: "2025", size: "2.4 MB" },
-    { title: "Quarterly Financial Statements", year: "2026 - Q1", size: "1.1 MB" },
-    { title: "Full Disclosure Policy Compliance", year: "2025", size: "4.5 MB" },
-    { title: "Statement of Receipts and Expenditures", year: "2025", size: "3.2 MB" },
+    { title: "Annual Audit Reports", year: "2025", size: "2.4 MB", href: "/reports/annual-audit-report.pdf" },
+    { title: "Quarterly Financial Statements", year: "2026 - Q1", size: "1.1 MB", href: "/reports/quarterly-financial-statements-q1-2026.pdf" },
+    { title: "Full Disclosure Policy Compliance", year: "2025", size: "4.5 MB", href: "/reports/full-disclosure-policy-compliance-2025.pdf" },
+    { title: "Statement of Receipts and Expenditures", year: "2025", size: "3.2 MB", href: "/reports/statement-of-receipts-and-expenditures-2025.pdf" },
   ];
 
   return (
@@ -26,9 +26,9 @@ function Reports() {
                   <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">Year: {report.year} • {report.size}</p>
                 </div>
               </div>
-              <button className="mt-4 md:mt-0 bg-white text-[#002B5B] border border-gray-200 px-6 py-2 rounded-full font-black text-[10px] uppercase tracking-widest hover:bg-[#002B5B] hover:text-white transition-all shadow-sm">
+              <a href={report.href} download className="mt-4 md:mt-0 bg-white text-[#002B5B] border border-gray-200 px-6 py-2 rounded-full font-black text-[10px] uppercase tracking-widest hover:bg-[#002B5B] hover:text-white transition-all shadow-sm">
                 Download PDF
-              </button>
+              </a>
             </div>
           ))}
         </div>
