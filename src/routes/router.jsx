@@ -1,10 +1,10 @@
 import React from 'react';
-import Mandate from './pages/Mandate.jsx';
-import ServiceGrid from './pages/ServiceGrid.jsx';
-import Reports from './pages/Reports.jsx';
-import Contact from './pages/Contact.jsx';
+// Notice the '../' — this tells Vite to step out of 'routes' and into 'src'
+import Mandate from '../pages/Mandate.jsx';
+import ServiceGrid from '../pages/ServiceGrid.jsx';
+import Reports from '../pages/Reports.jsx';
+import Contact from '../pages/Contact.jsx';
 
-// Custom router function that accepts the current activeTab as a prop
 function Router({ activeTab }) {
   switch (activeTab) {
     case 'HOME':
