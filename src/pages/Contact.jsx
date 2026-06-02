@@ -1,4 +1,3 @@
-import React from 'react';
 import Button from '../components/Button.jsx'; // 1. Import your new component
 
 function Contact() {
