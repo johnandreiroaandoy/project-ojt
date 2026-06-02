@@ -1,12 +1,18 @@
 import React, { useState, useEffect } from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
 
-function Header({ activeTab, setActiveTab }) {
-  const navLinks = ['HOME', 'MANDATE', 'SERVICES', 'REPORTS', 'CONTACT US'];
+function Header() {
+  // Map clear navigation names to their respective browser routing paths
+  const navLinks = [
+    { name: 'HOME', path: '/' },
+    { name: 'MANDATE', path: '/mandate' },
+    { name: 'SERVICES', path: '/services' },
+    { name: 'REPORTS', path: '/reports' },
+    { name: 'CONTACT US', path: '/contact' }
+  ];
 
-  // State to hold the current time
+  const location = useLocation();
   const [time, setTime] = useState(new Date());
-  
-  // 1. State to track mobile menu toggle visibility
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   // Setup interval to update time every second
@@ -30,12 +36,6 @@ function Header({ activeTab, setActiveTab }) {
       hour12: true 
     };
     return date.toLocaleString('en-US', options).replace(' at ', ' | ');
-  };
-
-  // Helper to change tab and auto-close mobile drawer
-  const handleNavigation = (link) => {
-    setActiveTab(link);
-    setIsMenuOpen(false);
   };
 
   return (
@@ -63,21 +63,23 @@ function Header({ activeTab, setActiveTab }) {
           <img src="davao.png" alt="Seal" className="h-14 w-14 object-contain" />
         </div>
 
-        {/* DESKTOP NAV LINKS USING PROPS */}
+        {/* DESKTOP NAV LINKS USING NAVLINK */}
         <div className="hidden lg:flex items-center space-x-8 text-[#2d3436] font-extrabold text-[13px] tracking-tight">
           {navLinks.map((link) => (
-            <button 
-              key={link} 
-              onClick={() => setActiveTab(link)}
-              className="relative group py-1 cursor-pointer outline-none"
+            <NavLink 
+              key={link.path} 
+              to={link.path}
+              className={({ isActive }) => `relative group py-1 cursor-pointer outline-none transition-colors uppercase ${isActive ? 'text-blue-700' : 'hover:text-blue-600'}`}
             >
-              <span className={`${activeTab === link ? 'text-blue-700' : 'group-hover:text-blue-600'} transition-colors uppercase`}>
-                {link}
-              </span>
-              <span className={`absolute bottom-0 left-0 w-full h-[2px] bg-blue-600 transition-transform duration-300 transform 
-                ${activeTab === link ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'}`}>
-              </span>
-            </button>
+              {({ isActive }) => (
+                <>
+                  <span>{link.name}</span>
+                  <span className={`absolute bottom-0 left-0 w-full h-[2px] bg-blue-600 transition-transform duration-300 transform 
+                    ${isActive ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'}`}>
+                  </span>
+                </>
+              )}
+            </NavLink>
           ))}
         </div>
 
@@ -89,7 +91,7 @@ function Header({ activeTab, setActiveTab }) {
             <img src="iso.jpg" alt="ISO" className="h-11 grayscale opacity-70" />
           </div>
 
-          {/* 2. HAMBURGER BUTTON (VISIBLE ON MOBILE/TABLET ONLY) */}
+          {/* HAMBURGER BUTTON (MOBILE) */}
           <button 
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             className="flex flex-col justify-center items-center lg:hidden w-8 h-8 space-y-1.5 focus:outline-none z-50"
@@ -106,19 +108,20 @@ function Header({ activeTab, setActiveTab }) {
       <div className={`lg:hidden w-full bg-white border-b border-gray-200 transition-all duration-300 ease-in-out overflow-hidden ${isMenuOpen ? 'max-h-72 opacity-100' : 'max-h-0 opacity-0'}`}>
         <div className="px-6 py-4 flex flex-col space-y-3 font-extrabold text-sm text-[#2d3436]">
           {navLinks.map((link) => (
-            <button
-              key={link}
-              onClick={() => handleNavigation(link)}
-              className={`w-full text-left py-2 border-b border-gray-50 last:border-none transition-colors ${activeTab === link ? 'text-blue-700 pl-2 border-l-2 border-l-blue-600' : 'hover:text-blue-600'}`}
+            <NavLink
+              key={link.path}
+              to={link.path}
+              onClick={() => setIsMenuOpen(false)}
+              className={({ isActive }) => `w-full text-left py-2 border-b border-gray-50 last:border-none transition-all ${isActive ? 'text-blue-700 pl-2 border-l-2 border-l-blue-600' : 'hover:text-blue-600'}`}
             >
-              {link}
-            </button>
+              {link.name}
+            </NavLink>
           ))}
         </div>
       </div>
 
-      {/* 4. HERO BANNER - ONLY VISIBLE ON HOME */}
-      {activeTab === 'HOME' && (
+      {/* 4. HERO BANNER - ONLY VISIBLE ON HOME (/) */}
+      {location.pathname === '/' && (
         <div 
           className="relative text-white py-24 px-4 md:px-12 overflow-hidden shadow-2xl animate-fadeIn bg-cover bg-center bg-no-repeat"
           style={{ backgroundImage: `url('bg.jpg')` }}
