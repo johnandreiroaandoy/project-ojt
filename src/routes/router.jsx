@@ -3,41 +3,23 @@ import Mandate from '../pages/Mandate.jsx';
 import ServiceGrid from '../pages/ServiceGrid.jsx';
 import Reports from '../pages/Reports.jsx';
 import Contact from '../pages/Contact.jsx';
-import Home from '../pages/home.jsx';
-import Dashboard from '../pages/Dashboard.jsx';
+import Home from '../pages/home.jsx'; // Your main welcome page component
 
 function Router() {
   return (
     <Routes>
-      {/* Home Page Layout */}
-      <Route 
-        path="/" 
-        element={
-          <section className="py-20 px-4 md:px-12 bg-white animate-fadeIn">
-            <div className="max-w-7xl mx-auto">
-              <h2 className="text-4xl text-center font-black text-[#002B5B] uppercase italic">Welcome to the Office of City Accoutant</h2>
-              <p className="mt-4 text-gray-600 font-medium">The City Accountant’s Office is responsible for the accounting & internal audit services as well as the preparation of Financial Statements in accordance with and in compliance with the Philippine Public Sector Accounting Standards (PPSAS).
-                
-                 The Office was established in view of the  SP Res. No. 1722, City Ord. No. 298, S-1991, mandated by RA No. 7160, Local Gov’t Code – 1991. The creation of the City Accountant’s Office was geared towards economic, efficient and effective system of safeguarding the city government’s funds and properties against loss or wastage through illegal or improper disposal</p>
-              
-            </div>
-          </section>
-
-
-
-        } 
-      />
+      {/* Point the main root path directly to your Home component. 
+        Put that welcome section layout code inside your Home.jsx file!
+      */}
+      <Route path="/" element={<Home />} />
+      <Route path="/home" element={<Home />} />
 
       {/* Other Page Components linked to URL paths */}
       <Route path="/mandate" element={<Mandate />} />
       <Route path="/services" element={<ServiceGrid />} />
       <Route path="/reports" element={<Reports />} />
       <Route path="/contact" element={<Contact />} />
-      <Route path="/home" element={<Home />} />
       
-      {/* 🔴 NEW: Dynamic PHP-Connected Dashboard Page */}
-      <Route path="/dashboard" element={<Dashboard />} />
-
       {/* Catch-all 404 Route */}
       <Route 
         path="*" 
