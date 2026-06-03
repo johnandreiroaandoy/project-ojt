@@ -1,10 +1,54 @@
-import Button from '../components/Button.jsx'; // 1. Import your new component
+import React, { useState } from 'react';
+import Button from '../components/Button.jsx';
 
 function Contact() {
-  // Prevent form refresh for now
+  // 1. React States to track form inputs dynamically
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [message, setMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // 2. Form submission handler that talks to your PHP Backend API
   const handleSubmit = (e) => {
     e.preventDefault();
-    alert("Message sent to the City Accountant's Office!");
+    setIsSubmitting(true);
+
+    const formData = { name, email, message };
+
+    // Pointing directly to your custom PHP MVC framework port 80 path with explicit /public routing
+    fetch('http://localhost/cgo-accountant-system/backend/public/api/contact', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(formData),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return response.json();
+      })
+      .then((data) => {
+        if (data.status === 'success') {
+          // Success message back from your PHP controller class
+          alert(data.message);
+          
+          // Clear inputs on success execution
+          setName('');
+          setEmail('');
+          setMessage('');
+        } else {
+          alert('Submission Error: ' + data.message);
+        }
+      })
+      .catch((error) => {
+        console.error('Error submitting form to PHP backend:', error);
+        alert('Could not reach the server. Please check if XAMPP Apache is running.');
+      })
+      .finally(() => {
+        setIsSubmitting(false);
+      });
   };
 
   return (
@@ -64,6 +108,8 @@ function Contact() {
             <label className="text-[10px] font-black text-gray-400 uppercase ml-2">Full Name</label>
             <input 
               type="text" 
+              value={name}
+              onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Juan Dela Cruz" 
               className="w-full p-4 rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all" 
               required
@@ -73,7 +119,9 @@ function Contact() {
           <div className="space-y-2">
             <label className="text-[10px] font-black text-gray-400 uppercase ml-2">Email Address</label>
             <input 
-              type="email" 
+              type="email" /* 🟢 Corrected from type="type" to type="email" to allow browser checking */
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               placeholder="name@example.com" 
               className="w-full p-4 rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all" 
               required
@@ -83,6 +131,8 @@ function Contact() {
           <div className="space-y-2">
             <label className="text-[10px] font-black text-gray-400 uppercase ml-2">Message</label>
             <textarea 
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
               placeholder="How can we help you?" 
               rows="4" 
               className="w-full p-4 rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all resize-none"
@@ -90,10 +140,9 @@ function Contact() {
             ></textarea>
           </div>
 
-          {/* 2. Using your REUSABLE Button component here */}
           <div className="pt-2">
-            <Button type="submit">
-              Send Message
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Sending Request...' : 'Send Message'}
             </Button>
           </div>
           
