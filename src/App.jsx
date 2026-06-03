@@ -3,6 +3,7 @@ import Header from './components/Header.jsx';
 import Footer from './components/Footer.jsx';
 import Router from './routes/router.jsx';
 import './index.css';
+import Home from './pages/home.jsx';
 
 function App() {
   return (
@@ -12,7 +13,9 @@ function App() {
         <Header />
         
         <main className="flex-grow">
+
           <Router />
+          <Home />
         </main>
 
         <Footer />
