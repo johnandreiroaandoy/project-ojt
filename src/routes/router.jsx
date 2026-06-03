@@ -3,6 +3,7 @@ import Mandate from '../pages/Mandate.jsx';
 import ServiceGrid from '../pages/ServiceGrid.jsx';
 import Reports from '../pages/Reports.jsx';
 import Contact from '../pages/Contact.jsx';
+import Dashboard from '../pages/Dashboard.jsx';
 
 function Router() {
   return (
@@ -25,6 +26,9 @@ function Router() {
       <Route path="/services" element={<ServiceGrid />} />
       <Route path="/reports" element={<Reports />} />
       <Route path="/contact" element={<Contact />} />
+      
+      {/* 🔴 NEW: Dynamic PHP-Connected Dashboard Page */}
+      <Route path="/dashboard" element={<Dashboard />} />
 
       {/* Catch-all 404 Route */}
       <Route 
