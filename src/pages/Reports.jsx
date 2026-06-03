@@ -7,7 +7,8 @@ function Reports() {
 
   // 2. Fetch data directly from your PHP MVC API endpoint on component mount
   useEffect(() => {
-    fetch('http://localhost/cgo-accountant-api/public/api/reports')
+    // 🟢 DYNAMIC VITE ENV VARIABLE APPLIED HERE
+    fetch(`${import.meta.env.VITE_API_BASE_URL}/api/reports`)
       .then((response) => {
         if (!response.ok) {
           throw new Error('Network response was not ok');
@@ -55,7 +56,12 @@ function Reports() {
                     <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">Year: {report.year} • {report.size}</p>
                   </div>
                 </div>
-                <a href={`http://localhost/cgo-accountant-api/public${report.href}`} download className="mt-4 md:mt-0 bg-white text-[#002B5B] border border-gray-200 px-6 py-2 rounded-full font-black text-[10px] uppercase tracking-widest hover:bg-[#002B5B] hover:text-white transition-all shadow-sm">
+                {/* 🟢 DYNAMIC VITE ENV VARIABLE APPLIED HERE FOR ASSET DOWNLOAD */}
+                <a 
+                  href={`${import.meta.env.VITE_API_BASE_URL}${report.href}`} 
+                  download 
+                  className="mt-4 md:mt-0 bg-white text-[#002B5B] border border-gray-200 px-6 py-2 rounded-full font-black text-[10px] uppercase tracking-widest hover:bg-[#002B5B] hover:text-white transition-all shadow-sm"
+                >
                   Download PDF
                 </a>
               </div>

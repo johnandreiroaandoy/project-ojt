@@ -15,8 +15,8 @@ function Contact() {
 
     const formData = { name, email, message };
 
-    // Pointing directly to your custom PHP MVC framework port 80 path with explicit /public routing
-    fetch('http://localhost/cgo-accountant-system/backend/public/api/contact', {
+    // 🟢 DYNAMIC VITE ENV VARIABLE APPLIED HERE
+    fetch(`${import.meta.env.VITE_API_BASE_URL}/api/contact`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -119,7 +119,7 @@ function Contact() {
           <div className="space-y-2">
             <label className="text-[10px] font-black text-gray-400 uppercase ml-2">Email Address</label>
             <input 
-              type="email" /* 🟢 Corrected from type="type" to type="email" to allow browser checking */
+              type="email" 
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="name@example.com" 
