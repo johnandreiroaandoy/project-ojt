@@ -61,6 +61,8 @@ function Header() {
           <img src="dcplinado.png" alt="Logo" className="h-10 w-auto object-contain" />
           <div className="h-8 w-[2px] bg-[#002B5B] opacity-20"></div>
           <img src="davao.png" alt="Seal" className="h-14 w-14 object-contain" />
+          <div className="h-8 w-[2px] bg-[#002B5B] opacity-20"></div>
+          <img src="cao.png" alt="Seal" className="h-14 w-14 object-contain" />
         </div>
 
         {/* DESKTOP NAV LINKS USING NAVLINK */}
@@ -88,7 +90,7 @@ function Header() {
             <img src="icon.webp" alt="Search" className="w-5 h-5 opacity-60" />
           </button>
           <div className="hidden sm:block border-l pl-6 border-gray-200">
-            <img src="iso.jpg" alt="ISO" className="h-11 grayscale opacity-70" />
+            <img src="iso.jpg" alt="ISO" className="h-11 grayscale opacity-80" />
           </div>
 
           {/* HAMBURGER BUTTON (MOBILE) */}
@@ -121,27 +123,46 @@ function Header() {
       </div>
 
       {/* 4. HERO BANNER - ONLY VISIBLE ON HOME (/) */}
-      {location.pathname === '/' && (
-        <div 
-          className="relative text-white py-24 px-4 md:px-12 overflow-hidden shadow-2xl animate-fadeIn bg-cover bg-center bg-no-repeat"
-          style={{ backgroundImage: `url('bg.jpg')` }}
-        >
-          <div className="absolute inset-0 bg-gradient-to-r from-[#002B5B]/90 to-[#001f42]/70 mix-blend-multiply"></div>
-          <div className="absolute top-0 right-0 w-1/3 h-full bg-gradient-to-l from-white/5 to-transparent skew-x-12 transform translate-x-20"></div>
-          
-          <div className="relative z-10 max-w-7xl mx-auto">
-            <div className="inline-block px-3 py-1 bg-blue-500/20 rounded-md border border-white/20 backdrop-blur-sm mb-6">
-              <p className="text-[10px] md:text-xs font-bold tracking-[0.5em] uppercase text-blue-200">
-                City Government of Davao
-              </p>
-            </div>
-            <h1 className="text-5xl md:text-7xl font-black uppercase tracking-tighter leading-[0.9] drop-shadow-2xl">
-                City Accountant's <br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-blue-200">Office</span>
-            </h1>
-          </div>
+{location.pathname === '/' && (
+  <div 
+    className="relative text-white py-30 px-6 md:px-16 overflow-hidden shadow-2xl animate-fadeIn bg-cover bg-center bg-no-repeat"
+    style={{ backgroundImage: `url('city.jpg')` }}
+  >
+    {/* Background Dark Overlays */}
+    <div className="absolute inset-0 bg-gradient-to-r from-[#002B5B]/40 to-[#001f42]/70 mix-blend-multiply"></div>
+    <div className="absolute top-0 right-0 w-1/3 h-full bg-gradient-to-l from-white/5 to-transparent skew-x-12 transform translate-x-20"></div>
+    
+    {/* FLEX ROW CONTAINER: Controls horizontal alignment side-by-side */}
+    <div className="relative z-10 max-w-7xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
+      
+      {/* Left Column: Text Elements Group */}
+      <div className="text-left flex-1">
+        <div className="inline-block px-10 py-2 bg-blue-500/20 rounded-md border border-white/50 backdrop-blur-sm mb-6">
+          {/* Note: Fixed text-[100px] typo back to text-[10px] so it doesn't break mobile layouts */}
+          <p className="text-[10px] md:text-xs font-bold tracking-[0.5em] uppercase text-blue-200 m-0">
+            City Government of Davao
+          </p>
         </div>
-      )}
+
+        <h1 className="text-5xl md:text-7xl font-black uppercase tracking-tighter leading-[0.9] drop-shadow-2xl m-0">
+          City Accountant's <br />
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-blue-500">Office</span>
+        </h1>
+      </div>
+      
+      {/* Right Column: Clean Horizontal Logo Element */}
+      {/* Set sizes using Tailwind increments: h-48 w-48 means 192px wide/tall */}
+      <div className="flex shrink-0 items-center justify-center w-full md:w-auto animate-fadeIn pr-0 md:pr-4">
+        <img 
+          src="/cao.png" 
+          alt="Office of the City Accountant Seal" 
+          className="h-36 w-36 md:h-80 md:w-80 object-contain drop-shadow-[0_10px_15px_rgba(0,0,0,0.6)] filter contrast-150 transition-transform duration-300 hover:scale-105"
+        />
+      </div>
+
+    </div>
+  </div>
+)}
     </header>
   );
 }
