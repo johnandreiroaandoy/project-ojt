@@ -50,15 +50,15 @@ function Footer() {
           <h3 className="text-[#002B5B] font-black text-sm uppercase tracking-widest mb-6">Contact Us</h3>
           <ul className="space-y-4 text-sm text-gray-600 font-medium">
             <li className="flex gap-3">
-              <img src="/src/assets/phone-icon.png" alt="" className="w-4 h-4 opacity-50" />
+              <img src="phone.png" alt="" className="w-6 h-6 opacity-100" />
               <span>(082) 222-1234 / Local 505</span>
             </li>
             <li className="flex gap-3">
-              <span className="w-4 h-4 opacity-50 italic font-serif">@</span>
+              <img src="at.png" alt="" className="w-6 h-6 opacity-100" />
               <a href="mailto:accountant@davaocity.gov.ph" className="hover:text-blue-600 underline decoration-blue-200">accountant@davaocity.gov.ph</a>
             </li>
             <li className="flex gap-3 text-xs leading-relaxed">
-              <img src="https://flagcdn.com/w20/ph.png" alt="" className="w-4 h-3 mt-1" />
+              <img src="ct.png" alt="" className="w-6 h-6 mt-1" />
               <span>2nd Floor, City Hall Building, <br />City Hall Drive, Davao City, 8000</span>
             </li>
           </ul>
@@ -68,8 +68,8 @@ function Footer() {
         <div>
           <h3 className="text-[#002B5B] font-black text-sm uppercase tracking-widest mb-6">Government Portals</h3>
           <div className="grid grid-cols-2 gap-4">
-            <img src="republika.png" alt="Republic of the Philippines" className="h-16 w-16 object-contain grayscale hover:grayscale-0 transition-all opacity-60 hover:opacity-100" />
-            <img src="bagong.png" alt="Bagong Pilipinas" className="h-16 w-16 object-contain grayscale hover:grayscale-0 transition-all opacity-60 hover:opacity-100" />
+            <img src="republika.png" alt="Republic of the Philippines" className="h-16 w-16 object-contain grayscale hover:scale-150 hover:grayscale-0 transition-all opacity-60 hover:opacity-100" />
+            <img src="bagong.png" alt="Bagong Pilipinas" className="h-16 w-16 object-contain grayscale hover:scale-150 hover:grayscale-0 transition-all opacity-60 hover:opacity-100" />
           </div>
         </div>
       </div>
