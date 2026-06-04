@@ -71,12 +71,12 @@ function Header() {
             <NavLink 
               key={link.path} 
               to={link.path}
-              className={({ isActive }) => `relative group py-1 cursor-pointer outline-none transition-colors uppercase ${isActive ? 'text-blue-700' : 'hover:text-blue-600'}`}
+              className={({ isActive }) => `relative group py-1 cursor-pointer outline-none transition-colors uppercase hover:scale-120 ${isActive ? 'text-yellow-700' : 'hover:text-blue-600'}`}
             >
               {({ isActive }) => (
                 <>
                   <span>{link.name}</span>
-                  <span className={`absolute bottom-0 left-0 w-full h-[2px] bg-blue-600 transition-transform duration-300 transform 
+                  <span className={`absolute bottom-0 left-0 w-full h-[2px] bg-blue-300 transition-transform duration-300 transform 
                     ${isActive ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'}`}>
                   </span>
                 </>
@@ -86,8 +86,8 @@ function Header() {
         </div>
 
         <div className="flex items-center gap-4 lg:gap-6">
-          <button className="p-2.5 hover:bg-gray-100 rounded-full transition-all">
-            <img src="icon.webp" alt="Search" className="w-5 h-5 opacity-60" />
+          <button className="p-2.5 hover:scale-135 hover:bg-gray-100 rounded-full transition-all">
+            <img src="search.png" alt="Search" className="w-5 h-5 opacity-100" />
           </button>
           <div className="hidden sm:block border-l pl-6 border-gray-200">
             <img src="iso.jpg" alt="ISO" className="h-11 grayscale opacity-80" />
@@ -156,7 +156,7 @@ function Header() {
         <img 
           src="/cao.png" 
           alt="Office of the City Accountant Seal" 
-          className="h-36 w-36 md:h-80 md:w-80 object-contain drop-shadow-[0_10px_15px_rgba(0,0,0,0.6)] filter contrast-150 transition-transform duration-300 hover:scale-105"
+          className="h-36 w-36 md:h-80 md:w-80 object-contain drop-shadow-[0_10px_15px_rgba(255,255,255,85)] filter contrast-150 transition-transform duration-300 hover:scale-105"
         />
       </div>
 

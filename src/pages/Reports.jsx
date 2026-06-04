@@ -38,7 +38,7 @@ function Reports() {
 
         {/* 3. Handle Loading State / Server Downtime alerts gracefully */}
         {loading ? (
-          <div className="text-center py-10 font-medium text-gray-400 animate-pulse">
+          <div className="text-center py-10 font-medium border border-blue-500 text-gray-400 animate-pulse">
             Fetching secure document streams from City Accountant Engine...
           </div>
         ) : reportCategories.length === 0 ? (
@@ -46,27 +46,43 @@ function Reports() {
             Could not load reports. Please check if your XAMPP Apache module is operational.
           </div>
         ) : (
-          <div className="space-y-4">
-            {reportCategories.map((report, index) => (
-              <div key={index} className="flex flex-col md:flex-row justify-between items-center p-6 bg-gray-50 rounded-2xl border border-gray-100 hover:border-blue-200 transition-all group">
-                <div className="flex items-center gap-6">
-                  <div className="text-4xl">📄</div>
-                  <div>
-                    <h4 className="text-[#002B5B] font-bold text-lg">{report.title}</h4>
-                    <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">Year: {report.year} • {report.size}</p>
-                  </div>
-                </div>
-                {/* 🟢 DYNAMIC VITE ENV VARIABLE APPLIED HERE FOR ASSET DOWNLOAD */}
-                <a 
-                  href={`${import.meta.env.VITE_API_BASE_URL}${report.href}`} 
-                  download 
-                  className="mt-4 md:mt-0 bg-white text-[#002B5B] border border-gray-200 px-6 py-2 rounded-full font-black text-[10px] uppercase tracking-widest hover:bg-[#002B5B] hover:text-white transition-all shadow-sm"
-                >
-                  Download PDF
-                </a>
-              </div>
-            ))}
+         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+  {reportCategories.map((report, index) => (
+    <div 
+      key={index} 
+      className="bg-white p-6 rounded-2xl border border-blue-400 shadow-xl flex flex-col justify-between transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-md hover:border-gray-600 group"
+    >
+      <div>
+        {/* Top Section: Icon & Header Details */}
+        <div className="flex items-start gap-4 mb-6">
+          <div className="text-3xl bg-gray-50 p-3 rounded-xl group-hover:scale-110 transition-transform duration-300 inline-block shrink-0">
+            📄
           </div>
+          <div>
+            <h4 className="text-[#002B5B] font-bold text-base line-clamp-2 transition-colors duration-300 group-hover:text-blue-700">
+              {report.title}
+            </h4>
+            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1.5">
+              Year: {report.year} • {report.size}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom Section: Explicit Download Button Action */}
+      {/* 🟢 DYNAMIC VITE ENV VARIABLE APPLIED HERE FOR ASSET DOWNLOAD */}
+      <div className="mt-4">
+        <a 
+          href={`${import.meta.env.VITE_API_BASE_URL}${report.href}`} 
+          download 
+          className="w-full text-center block bg-blue-50/50 text-[#002B5B] border border-blue-100 py-2.5 px-4 rounded-full font-black text-[10px] uppercase tracking-widest transition-all duration-300 group-hover:bg-[#002B5B] group-hover:text-white group-hover:border-[#002B5B] shadow-sm"
+        >
+          Download PDF
+        </a>
+      </div>
+    </div>
+  ))}
+</div>
         )}
       </div>
     </section>

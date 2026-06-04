@@ -59,7 +59,7 @@ function Footer() {
             </li>
             <li className="flex gap-3 text-xs leading-relaxed">
               <img src="ct.png" alt="" className="w-6 h-6 mt-1" />
-              <span>2nd Floor, City Hall Building, <br />City Hall Drive, Davao City, 8000</span>
+              <span>3rd Floor, City Hall Building, <br />City Hall Drive, Davao City, 8000</span>
             </li>
           </ul>
         </div>
@@ -68,7 +68,7 @@ function Footer() {
         <div>
           <h3 className="text-[#002B5B] font-black text-sm uppercase tracking-widest mb-6">Government Portals</h3>
           <div className="grid grid-cols-2 gap-4">
-            <img src="republika.png" alt="Republic of the Philippines" className="h-16 w-16 object-contain grayscale hover:scale-150 hover:grayscale-0 transition-all opacity-60 hover:opacity-100" />
+            <img src="republic.png" alt="Republic of the Philippines" className="h-16 w-16 object-contain grayscale hover:scale-150 hover:grayscale-0 transition-all opacity-60 hover:opacity-100" />
             <img src="bagong.png" alt="Bagong Pilipinas" className="h-16 w-16 object-contain grayscale hover:scale-150 hover:grayscale-0 transition-all opacity-60 hover:opacity-100" />
           </div>
         </div>
@@ -81,15 +81,15 @@ function Footer() {
             © 2026 City Government of Davao. All Rights Reserved.
           </div>
           
-          <div className="flex items-center space-x-6">
+          <div className="flex items-center space-x-2">
             <a href="#" className="hover:text-blue-300 transition-colors uppercase">Privacy Policy</a>
             <span className="opacity-30">|</span>
             <a href="#" className="hover:text-blue-300 transition-colors uppercase">Terms of Use</a>
             <span className="opacity-30">|</span>
-            <div className="flex gap-3 border-l border-white/20 pl-6">
-               <img src="fb.png" alt="Facebook" className="h-4 w-4 opacity-70 hover:opacity-100 transition-opacity cursor-pointer" />
-               <img src="twitter.webp" alt="Twitter" className="h-4 w-4 opacity-70 hover:opacity-100 transition-opacity cursor-pointer" />
-            </div>
+            <div className="flex gap-1 border-l border-white/20 "></div>
+               <img src="fbl.png" alt="Facebook" className="h-7 w-7 opacity-70 hover:scale-150 hover:opacity-100 transition-opacity cursor-pointer" />
+            <div className="flex gap-1 border-l border-white/20 "></div>  
+               <img src="X.png" alt="Twitter" className="h-7 w-7 opacity-70 hover:scale-150 hover:opacity-100 transition-opacity cursor-pointer" />
           </div>
         </div>
       </div>

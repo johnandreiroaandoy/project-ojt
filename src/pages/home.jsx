@@ -14,7 +14,7 @@ function Home () {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch">
           
           {/* 1. LEFT CARD: City Transactions */}
-          <div className="bg-white p-6 md:p-8 rounded-2xl border border-slate-100 shadow-lg shadow-slate-100/70 flex flex-col transition-all duration-300 hover:shadow-xl">
+          <div className="bg-white p-6 md:p-8 rounded-2xl border border-slate-500 shadow-lg shadow-slate-500 flex flex-col transition-all duration-300 hover:shadow-xl">
             <h3 className="text-lg font-black text-[#002B5B] uppercase italic tracking-tight border-b border-slate-100 pb-3 mb-4 flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-blue-600"></span>
               City Transactions:
@@ -56,7 +56,7 @@ function Home () {
           </div>
 
           {/* 2. RIGHT CARD: Barangay Transactions */}
-          <div className="bg-white p-6 md:p-8 rounded-2xl border border-slate-100 shadow-lg shadow-slate-100/70 flex flex-col transition-all duration-300 hover:shadow-xl">
+          <div className="bg-white p-6 md:p-8 rounded-2xl border border-slate-500 shadow-lg shadow-slate-500 flex flex-col transition-all duration-300 hover:shadow-xl">
             <h3 className="text-lg font-black text-[#002B5B] uppercase italic tracking-tight border-b border-slate-100 pb-3 mb-4 flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-emerald-500"></span>
               Barangay Transactions:
@@ -98,8 +98,8 @@ function Home () {
 
       {/* SECTION 2: OFFICE RESPONSIBILITY & MANDATE FOOTER CARD */}
       <div className="max-w-7xl mx-auto px-4">
-        <div className="bg-gradient-to-br from-[#002B5B] to-[#001f42] text-white p-8 rounded-2xl shadow-xl shadow-slate-200/50 border border-white/10">
-          <p className="text-sm md:text-base text-slate-100 font-normal leading-relaxed mb-4">
+        <div className="bg-gradient-to-br from-[#002B5B] to-[#001f42] text-white p-8 rounded-2xl shadow-xl shadow-slate-500 border border-white/10">
+          <p className="text-xl md:text-base text-slate-200 font-large leading-relaxed mb-4">
            The City Accountant’s Office is located at Rm. 27, 3rdFlr, City Hall Bldg., San Pedro St., Davao City. You may contact them through (082) 241-1000, local 51-55 or email them at caodavao@yahoo.com or at cao@davaocity.gov.ph
           </p>
         </div>
