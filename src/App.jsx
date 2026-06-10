@@ -3,8 +3,12 @@ import Header from './components/Header.jsx';
 import Footer from './components/Footer.jsx';
 import Router from './routes/router.jsx';
 import './index.css';
+
 // 1. 🟢 IMPORT THE GOOGLE PROVIDER PACKAGE HERE
 import { GoogleReCaptchaProvider } from 'react-google-recaptcha-v3';
+
+// 🌟 IMPORT THE TOAST ENGINE HERE
+import { Toaster } from 'react-hot-toast';
 
 function App() {
   return (
@@ -23,6 +27,23 @@ function App() {
           {/* Global Footer */}
           <Footer />
         </div>
+
+        {/* 🌟 GLOBAL TOASTER CONFIGURATION */}
+        {/* This stays awake globally and listens for popups from your contact form */}
+        <Toaster 
+          position="top-right" 
+          reverseOrder={false}
+          toastOptions={{
+            style: {
+              fontSize: '14px',
+              padding: '16px',
+              borderRadius: '8px',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.12)',
+              maxWidth: '350px',
+              zIndex: 9999 // Ensures it sits safely on top of your navigation bars/headers
+            }
+          }}
+        />
       </BrowserRouter>
     </GoogleReCaptchaProvider>
   );

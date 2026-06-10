@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Button from '../components/Button.jsx';
+import toast from 'react-hot-toast'; // 🌟 Import the notification system
 
 function Contact() {
   // 1. React States to track form inputs dynamically
@@ -25,32 +26,51 @@ function Contact() {
         body: JSON.stringify(formData),
       });
 
-      // Safely read the JSON payload (whether it's a 200 Success, 400 Bad Request, or 429 Rate Limit)
+      // Safely read the JSON payload
       const data = await response.json();
 
       // Check if the backend returned an error HTTP status
       if (!response.ok) {
-        // This prints your custom PHP rate-limiting message: "Too many submissions!..."
-        alert(data.message || 'Submission Error.');
+        if (response.status === 429) {
+          // ⏳ ENHANCED RATE-LIMIT POPUP (Too many attempts)
+          toast.error(data.message || 'Too many attempts.', {
+            icon: '⏳',
+            style: { border: '1px solid #F59E0B', background: '#FFFBEB', color: '#92400E' }
+          });
+        } else {
+          // ❌ ENHANCED FORM VALIDATION ERROR (400 Bad Request)
+          toast.error(data.message || 'Submission Error.', {
+            style: { border: '1px solid #EF4444', background: '#FEF2F2', color: '#991B1B' }
+          });
+        }
         return;
       }
 
       // Handle completely successful database entries
       if (data.status === 'success') {
-        alert(data.message);
+        // ✨ ENHANCED SUCCESS POPUP
+        toast.success(data.message, {
+          icon: '✨',
+          style: { border: '1px solid #10B981', background: '#ECFDF5', color: '#065F46' }
+        });
         
         // Clear inputs on success execution
         setName('');
         setEmail('');
         setMessage('');
       } else {
-        alert('Submission Error: ' + data.message);
+        // ❌ SYSTEM FAILURES RETURNED BY PHP
+        toast.error('Submission Error: ' + data.message, {
+          style: { border: '1px solid #EF4444', background: '#FEF2F2', color: '#991B1B' }
+        });
       }
 
     } catch (error) {
       // Triggers ONLY if Apache is completely turned off or network breaks entirely
       console.error('Error submitting form to PHP backend:', error);
-      alert('Could not reach the server. Please check if XAMPP Apache is running.');
+      toast.error('Could not reach the server. Please check if XAMPP Apache is running.', {
+        style: { border: '1px solid #EF4444', background: '#FEF2F2', color: '#991B1B' }
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -153,7 +173,7 @@ function Contact() {
           <div className="space-y-2">
             <label className="text-[10px] font-black text-gray-400 uppercase ml-2">Email Address</label>
             <input 
-              type="type" 
+              type="email" 
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="name@example.com" 
