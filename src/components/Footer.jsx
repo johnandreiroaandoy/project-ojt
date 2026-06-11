@@ -87,7 +87,18 @@ function Footer() {
             <a href="#" className="hover:text-blue-300 transition-colors uppercase">Terms of Use</a>
             <span className="opacity-30">|</span>
             <div className="flex gap-1 border-l border-white/20 "></div>
-               <img src="fbl.png" alt="Facebook" className="h-7 w-7 opacity-70 hover:scale-150 hover:opacity-100 transition-opacity cursor-pointer" />
+               <a
+                  href="https://www.facebook.com/davaocitygov/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Visit our official Facebook page"
+                >
+                   <img
+                    src="/fbl.png"
+                    alt="Facebook"
+                    className="h-7 w-7 opacity-70 hover:scale-150 hover:opacity-100 transition cursor-pointer"
+                   />
+                </a>
             <div className="flex gap-1 border-l border-white/20 "></div>  
                <img src="X.png" alt="Twitter" className="h-7 w-7 opacity-70 hover:scale-150 hover:opacity-100 transition-opacity cursor-pointer" />
           </div>
