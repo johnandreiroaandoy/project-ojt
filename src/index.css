@@ -1,18 +1,63 @@
+/* ==========================================================
+   TAILWIND CSS IMPORTS
+
+   These directives load Tailwind's built-in styles.
+========================================================== */
+
+/* Loads Tailwind's base styles (resets and defaults) */
 @tailwind base;
+
+/* Loads reusable Tailwind component classes */
 @tailwind components;
+
+/* Loads Tailwind utility classes
+   (e.g., flex, padding, margin, colors, etc.) */
 @tailwind utilities;
+
+/* Imports Tailwind CSS framework */
 @import "tailwindcss";
 
-/* This removes the default margins so your header stretches to the edges */
+
+/* ==========================================================
+   GLOBAL PAGE STYLES
+========================================================== */
+
+/* 
+   Removes the browser's default spacing around the page.
+
+   Without this:
+   - Browsers add default margins around the body
+   - Headers and sections may not reach the screen edges
+
+   This ensures a clean, full-width layout.
+*/
 body {
-  margin: 0;
-  padding: 0;
+  margin: 0;          /* Removes default outer spacing */
+  padding: 0;         /* Removes default inner spacing */
+
+  /* Makes width and height calculations include
+     borders and padding */
   box-sizing: border-box;
 }
 
-/* Ensure the app takes up the full width */
+
+/* ==========================================================
+   ROOT APPLICATION CONTAINER
+========================================================== */
+
+/*
+   #root is the main container where React renders
+   the entire application.
+
+   These styles ensure:
+   - Full screen width
+   - No unwanted spacing
+   - Consistent layout behavior
+*/
 #root {
-  width: 100%;
-  margin: 0;
-  padding: 0;
+  width: 100%;   /* Makes the React app occupy the full width */
+
+  margin: 0;     /* Removes default outer spacing */
+
+  padding: 0;    /* Removes default inner spacing */
 }
