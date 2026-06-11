@@ -75,6 +75,8 @@ function Reports() {
         <a 
           href={`${import.meta.env.VITE_API_BASE_URL}${report.href}`} 
           download 
+          target="_blank"             // 🟢 FIXED: Opens file path inside a completely new browser tab
+          rel="noopener noreferrer" 
           className="w-full text-center block bg-blue-50/50 text-[#002B5B] border border-blue-100 py-2.5 px-4 rounded-full font-black text-[10px] uppercase tracking-widest transition-all duration-300 group-hover:bg-[#002B5B] group-hover:text-white group-hover:border-[#002B5B] shadow-sm"
         >
           Download PDF
