@@ -1,17 +1,10 @@
 // Import BrowserRouter to enable page navigation without refreshing the browser
 import { BrowserRouter } from 'react-router-dom';
-
-import Header from  './components/Header.jsx';
-
-
 // Import shared components that appear on every page
 import Header from './components/Header.jsx';
-
 import Footer from './components/Footer.jsx';
-
 // Import the application's route configuration
 import Router from './routes/router.jsx';
-
 // Import global CSS styles
 import './index.css';
 

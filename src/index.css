@@ -1,20 +1,11 @@
 /* ==========================================================
-   TAILWIND CSS IMPORTS
-
-   These directives load Tailwind's built-in styles.
+   TAILWIND CSS V4 CORE IMPORTS
 ========================================================== */
 
-/* Loads Tailwind's base styles (resets and defaults) */
-@tailwind base;
-
-/* Loads reusable Tailwind component classes */
-@tailwind components;
-
-/* Loads Tailwind utility classes
-   (e.g., flex, padding, margin, colors, etc.) */
-@tailwind utilities;
-
-/* Imports Tailwind CSS framework */
+/* In Tailwind v4, this single directive natively processes 
+   and bundles all base styles, custom components, 
+   and utility layout engines into your Vite application.
+*/
 @import "tailwindcss";
 
 
@@ -22,8 +13,7 @@
    GLOBAL PAGE STYLES
 ========================================================== */
 
-/* 
-   Removes the browser's default spacing around the page.
+/* Removes the browser's default spacing around the page.
 
    Without this:
    - Browsers add default margins around the body

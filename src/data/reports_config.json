@@ -1,0 +1,13 @@
+{
+  "pageHeader": {
+    "title": "Transparency Reports",
+    "description": "Downloadable financial documents and city audit records."
+  },
+  "states": {
+    "loadingText": "Fetching secure document streams from City Accountant Engine...",
+    "errorText": "Could not load reports. Please check if your XAMPP Apache module is operational."
+  },
+  "cardLabels": {
+    "buttonText": "Download PDF"
+  }
+}

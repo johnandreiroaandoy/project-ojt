@@ -1,0 +1,36 @@
+{
+  "header": {
+    "title": "Core Services",
+    "subtitle": "Davao City Accountant's Office Strategic Functions"
+  },
+  "controls": {
+    "backButton": "← Back to Core Services List",
+    "actionButton": "Read More"
+  },
+  "cards": [
+    {
+      "id": "financial",
+      "title": "Financial Reporting",
+      "desc": "Preparation of annual and quarterly financial statements.",
+      "icon": "📊"
+    },
+    {
+      "id": "audit",
+      "title": "Internal Audit",
+      "desc": "Examination of city transactions and control systems.",
+      "icon": "🔍"
+    },
+    {
+      "id": "claims",
+      "title": "Processing of Claims",
+      "desc": "Review and processing of disbursements and payroll.",
+      "icon": "💳"
+    },
+    {
+      "id": "barangay",
+      "title": "Barangay Affairs",
+      "desc": "Technical assistance for barangay financial management.",
+      "icon": "🏘️"
+    }
+  ]
+}

@@ -1,214 +1,162 @@
 import React from 'react';
 import "tailwindcss";
 
-// Footer Component
-// Displays the website footer containing branding,
-// quick links, contact information, government portals,
-// and social media links.
+// Decoupled Structural Content Mapping Source
+// Adjust path depth based on your exact file home directory
+import footerData from '../data/footer_data.json';
+
 function Footer() {
   return (
     <footer className="w-full font-sans antialiased bg-[#f8f9fa] border-t border-gray-200">
 
-      {/* =========================
-          MAIN FOOTER CONTENT
-          ========================= */}
+      {/* ==========================================================
+          MAIN FOOTER CONTENT - TEMPLATE ROW GRID
+      ========================================================== */}
       <div className="max-w-7xl mx-auto py-12 px-4 md:px-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
 
-        {/* =========================
-            COLUMN 1: OFFICE BRANDING
-            Displays logos and office description
-            ========================= */}
+        {/* COLUMN 1: OFFICE BRANDING */}
         <div className="space-y-4">
-
-          {/* Logo Container */}
           <div className="flex items-center gap-4">
-
-            {/* Davao City Seal */}
             <img
-              src="davao.png"
-              alt="Davao City Seal"
+              src={footerData.branding.sealSrc}
+              alt={footerData.branding.sealAlt}
               className="h-16 w-16 object-contain"
             />
-
-            {/* Decorative vertical divider */}
             <div className="h-12 w-[1.5px] bg-[#002B5B] opacity-20"></div>
-
-            {/* Office Branding Logo */}
             <img
-              src="dcplinado.png"
-              alt="Dabawenyo DCPlinado Logo"
+              src={footerData.branding.logoSrc}
+              alt={footerData.branding.logoAlt}
               className="h-14 w-40 object-contain"
             />
           </div>
-
-          {/* Short description about the office */}
           <p className="text-gray-600 text-sm leading-relaxed max-w-sm">
-            Ensuring fiscal integrity and transparent financial management for the City of Davao.
+            {footerData.branding.description}
           </p>
         </div>
 
-        {/* =========================
-            COLUMN 2: QUICK LINKS
-            Navigation shortcuts
-            ========================= */}
+        {/* COLUMN 2: QUICK LINKS DIRECTORY */}
         <div>
           <h3 className="text-[#002B5B] font-black text-sm uppercase tracking-widest mb-6">
-            Quick Links
+            {footerData.quickLinks.heading}
           </h3>
-
           <ul className="space-y-3 text-sm font-bold text-gray-500">
-            <li>
-              <a href="#" className="hover:text-blue-600 transition-colors uppercase">
-                Know Davao City
-              </a>
-            </li>
-
-            <li>
-              <a href="#" className="hover:text-blue-600 transition-colors uppercase">
-                City Departments
-              </a>
-            </li>
-
-            <li>
-              <a href="#" className="hover:text-blue-600 transition-colors uppercase">
-                Online Services
-              </a>
-            </li>
-
-            <li>
-              <a href="#" className="hover:text-blue-600 transition-colors uppercase">
-                Transparency Seal
-              </a>
-            </li>
+            {footerData.quickLinks.links.map((link, idx) => (
+              <li key={idx}>
+                <a href={link.href} className="hover:text-blue-600 transition-colors uppercase">
+                  {link.label}
+                </a>
+              </li>
+            ))}
           </ul>
         </div>
 
-        {/* =========================
-            COLUMN 3: CONTACT INFORMATION
-            Displays office contact details
-            ========================= */}
+        {/* COLUMN 3: DECOUPLED CONTACT CHANNELS */}
         <div>
           <h3 className="text-[#002B5B] font-black text-sm uppercase tracking-widest mb-6">
-            Contact Us
+            {footerData.contact.heading}
           </h3>
-
           <ul className="space-y-4 text-sm text-gray-600 font-medium">
-
-            {/* Phone Number */}
+            {/* Phone */}
             <li className="flex gap-3">
-              <img src="phone.png" alt="Phone Icon" className="w-6 h-6" />
-              <span>(082) 222-1234 / Local 505</span>
+              <img src={footerData.contact.phone.icon} alt="Phone" className="w-6 h-6" />
+              <span>{footerData.contact.phone.text}</span>
             </li>
-
             {/* Email Address */}
             <li className="flex gap-3">
-              <img src="at.png" alt="Email Icon" className="w-6 h-6" />
-
+              <img src={footerData.contact.email.icon} alt="Email" className="w-6 h-6" />
               <a
-                href="mailto:accountant@davaocity.gov.ph"
+                href={footerData.contact.email.href}
                 className="hover:text-blue-600 underline decoration-blue-200"
               >
-                accountant@davaocity.gov.ph
+                {footerData.contact.email.text}
               </a>
             </li>
-
-            {/* Office Address */}
+            {/* Physical Location */}
             <li className="flex gap-3 text-xs leading-relaxed">
-              <img src="ct.png" alt="Location Icon" className="w-6 h-6 mt-1" />
-
+              <img src={footerData.contact.address.icon} alt="Location" className="w-6 h-6 mt-1" />
               <span>
-                3rd Floor, City Hall Building,
+                {footerData.contact.address.line1}
                 <br />
-                City Hall Drive, Davao City, 8000
+                {footerData.contact.address.line2}
               </span>
             </li>
           </ul>
         </div>
 
-        {/* =========================
-            COLUMN 4: GOVERNMENT PORTALS
-            Displays external government logos
-            ========================= */}
+        {/* COLUMN 4: EXTERNAL PORTALS */}
         <div>
           <h3 className="text-[#002B5B] font-black text-sm uppercase tracking-widest mb-6">
-            Government Portals
+            {footerData.portals.heading}
           </h3>
-
           <div className="grid grid-cols-2 gap-4">
-
-            {/* Republic of the Philippines Logo */}
-            <img
-              src="republic.png"
-              alt="Republic of the Philippines"
-              className="h-16 w-16 object-contain grayscale hover:scale-150 hover:grayscale-0 transition-all opacity-60 hover:opacity-100"
-            />
-
-            {/* Bagong Pilipinas Logo */}
-            <img
-              src="bagong.png"
-              alt="Bagong Pilipinas"
-              className="h-16 w-16 object-contain grayscale hover:scale-150 hover:grayscale-0 transition-all opacity-60 hover:opacity-100"
-            />
+            {footerData.portals.logos.map((logo, idx) => (
+              <img
+                key={idx}
+                src={logo.src}
+                alt={logo.alt}
+                className="h-16 w-16 object-contain grayscale hover:scale-150 hover:grayscale-0 transition-all opacity-60 hover:opacity-100"
+              />
+            ))}
           </div>
         </div>
+
       </div>
 
-      {/* =========================
-          BOTTOM FOOTER BAR
-          Contains copyright,
-          policies, and social links
-          ========================= */}
+      {/* ==========================================================
+          BOTTOM LEGAL & SOCIALS SUB-BAR
+      ========================================================== */}
       <div className="bg-[#002B5B] py-6 px-4 md:px-12">
-
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center text-white text-[10px] md:text-[11px] font-medium tracking-wider gap-4">
-
-          {/* Copyright Notice */}
+          
+          {/* Copyright Field */}
           <div className="text-center md:text-left opacity-80 uppercase">
-            © 2026 City Government of Davao. All Rights Reserved.
+            {footerData.legal.copyright}
           </div>
 
           <div className="flex items-center space-x-2">
-
-            {/* Privacy Policy Link */}
-            <a href="#" className="hover:text-blue-300 transition-colors uppercase">
-              Privacy Policy
-            </a>
-
-            <span className="opacity-30">|</span>
-
-            {/* Terms of Use Link */}
-            <a href="#" className="hover:text-blue-300 transition-colors uppercase">
-              Terms of Use
-            </a>
+            {/* Privacy Policies Mapping */}
+            {footerData.legal.policies.map((policy, idx) => (
+              <React.Fragment key={idx}>
+                <a href={policy.href} className="hover:text-blue-300 transition-colors uppercase">
+                  {policy.label}
+                </a>
+                {idx < footerData.legal.policies.length - 1 && <span className="opacity-30">|</span>}
+              </React.Fragment>
+            ))}
 
             <span className="opacity-30">|</span>
 
-            {/* Facebook Link */}
-            <a
-              href="https://www.facebook.com/davaocitygov/"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Visit our official Facebook page"
-            >
-              <img
-                src="/fbl.png"
-                alt="Facebook"
-                className="h-7 w-7 opacity-70 hover:scale-150 hover:opacity-100 transition cursor-pointer"
-              />
-            </a>
-
-            {/* X / Twitter Icon */}
-            <img
-              src="X.png"
-              alt="Twitter"
-              className="h-7 w-7 opacity-70 hover:scale-150 hover:opacity-100 transition-opacity cursor-pointer"
-            />
+            {/* Social Media Elements Loop */}
+            {footerData.legal.socials.map((social, idx) => 
+              social.type === 'link' ? (
+                <a
+                  key={idx}
+                  href={social.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={social.aria}
+                >
+                  <img
+                    src={social.src}
+                    alt={social.alt}
+                    className="h-7 w-7 opacity-70 hover:scale-150 hover:opacity-100 transition cursor-pointer"
+                  />
+                </a>
+              ) : (
+                <img
+                  key={idx}
+                  src={social.src}
+                  alt={social.alt}
+                  className="h-7 w-7 opacity-70 hover:scale-150 hover:opacity-100 transition-opacity cursor-pointer"
+                />
+              )
+            )}
           </div>
+
         </div>
       </div>
     </footer>
   );
 }
 
-// Export component so it can be used in App.jsx or other pages
 export default Footer;

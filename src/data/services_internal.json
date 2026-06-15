@@ -1,0 +1,23 @@
+{
+  "title": "Internal Audit Section",
+  "subtitle": "Evaluating internal controls and safeguarding local government assets.",
+  "iconHeader": "🔍",
+  "servicesList": [
+    { 
+      "name": "Internal Control System Evaluation", 
+      "desc": "Regular assessment of office workflows, asset registries, and financial handling methods to identify system vulnerabilities." 
+    },
+    { 
+      "name": "Post-Audit of Financial Transactions", 
+      "desc": "Conducting comprehensive post-audits on high-value paid vouchers, payroll accounts, and procurement contracts." 
+    },
+    { 
+      "name": "Management & Operations Audit", 
+      "desc": "Reviewing local department operational workflows to ensure city programs are executed efficiently." 
+    },
+    { 
+      "name": "Compliance Verification Tracking", 
+      "desc": "Monitoring and assessing the implementation of Audit Observation Memorandums (AOM) issued by state auditors." 
+    }
+  ]
+}

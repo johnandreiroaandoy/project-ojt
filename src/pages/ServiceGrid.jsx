@@ -1,209 +1,119 @@
 import React, { useState } from 'react';
 
 // Import individual service page components
-// These components will be displayed when the user clicks "Read More"
 import FinancialReporting from './service/FinancialReporting.jsx';
 import InternalAudit from './service/InternalAudit.jsx';
 import ProcessingClaims from './service/ProcessingClaims.jsx';
 import BarangayAffairs from './service/BarangayAffairs.jsx';
 
-// ServiceGrid component
-// Displays a list of core services and allows users
-// to open detailed information for each service.
-function ServiceGrid() {
+// Decoupled Structural Content Mapping Source
+import directoryData from '../data/services_directory.json';
 
+function ServiceGrid() {
   /* ==========================================================
      STATE VARIABLE
-     Tracks which service page is currently open
-     
-     null         = Show the services grid
-     financial    = Show Financial Reporting page
-     audit        = Show Internal Audit page
-     claims       = Show Processing Claims page
-     barangay     = Show Barangay Affairs page
+     Tracks which detailed sub-page component view is open
   ========================================================== */
   const [activeView, setActiveView] = useState(null);
 
   /* ==========================================================
-     SERVICES DATA
-     Contains information for each service card
-  ========================================================== */
-  const services = [
-    {
-      id: 'financial',
-      title: "Financial Reporting",
-      desc: "Preparation of annual and quarterly financial statements.",
-      icon: "📊"
-    },
-    {
-      id: 'audit',
-      title: "Internal Audit",
-      desc: "Examination of city transactions and control systems.",
-      icon: "🔍"
-    },
-    {
-      id: 'claims',
-      title: "Processing of Claims",
-      desc: "Review and processing of disbursements and payroll.",
-      icon: "💳"
-    },
-    {
-      id: 'barangay',
-      title: "Barangay Affairs",
-      desc: "Technical assistance for barangay financial management.",
-      icon: "🏘️"
-    },
-  ];
-
-  /* ==========================================================
      COMPONENT SWITCHER
-     Determines which component to display based on
-     the current value of activeView
+     Determines which component file sub-node to unpack 
+     onto the DOM layout based on activeView state value
   ========================================================== */
   const renderSelectedComponent = () => {
     switch (activeView) {
-
-      // Show Financial Reporting page
       case 'financial':
         return <FinancialReporting />;
-
-      // Show Internal Audit page
       case 'audit':
         return <InternalAudit />;
-
-      // Show Processing Claims page
       case 'claims':
         return <ProcessingClaims />;
-
-      // Show Barangay Affairs page
       case 'barangay':
         return <BarangayAffairs />;
-
-      // Show nothing if no selection exists
       default:
         return null;
     }
   };
 
   return (
-
-    /* ==========================================================
-       MAIN SERVICES SECTION
-    ========================================================== */
     <section
       id="services-section"
       className="bg-gray-50/50 py-16 px-4 md:px-12 border-b border-gray-100"
     >
       <div className="max-w-7xl mx-auto w-full">
 
-        {/* ======================================================
-           CONDITION 1:
-           If a service is selected, show its detailed page
-        ====================================================== */}
+        {/* CONDITION 1: IF DETAILED SUB-VIEW COMPONENT IS ACTIVE */}
         {activeView ? (
-
           <div className="bg-white rounded-2xl shadow-xl p-8 md:p-12 border border-gray-100 transition-all duration-300">
-
-            {/* Back button to return to the services grid */}
+            
+            {/* Back button to drop state back to primary dashboard matrix view */}
             <div className="mb-8">
               <button
                 onClick={() => setActiveView(null)}
                 className="text-xs font-bold text-blue-600 hover:text-[#002B5B] uppercase tracking-wider transition-colors inline-flex items-center gap-2"
               >
-                ← Back to Core Services List
+                {directoryData.controls.backButton}
               </button>
             </div>
 
-            {/* Display selected component */}
+            {/* Display selected decoupled sub-page tree node component */}
             <div>
               {renderSelectedComponent()}
             </div>
 
           </div>
-
         ) : (
 
-          /* ======================================================
-             CONDITION 2:
-             No service selected → show services directory
-          ====================================================== */
+          /* CONDITION 2: MAIN DIRECTORY GRID OVERVIEW */
           <>
-
-            {/* ==================================================
-                PAGE HEADER
-            ================================================== */}
+            {/* COMPONENT TITLE ROW EXTRACTED FROM METADATA JSON */}
             <div className="mb-12 border-l-4 border-[#002B5B] pl-6">
-
-              {/* Main title */}
               <h2 className="text-[#002B5B] text-4xl font-black uppercase tracking-tight">
-                Core Services
+                {directoryData.header.title}
               </h2>
-
-              {/* Subtitle */}
               <p className="text-gray-500 text-sm font-medium mt-1">
-                Davao City Accountant's Office Strategic Functions
+                {directoryData.header.subtitle}
               </p>
-
             </div>
 
-            {/* ==================================================
-                SERVICES GRID
-                Displays all available service cards
-            ================================================== */}
+            {/* INTERACTIVE COMPONENT CARD MENU GRID */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-
-              {/* Loop through each service and create a card */}
-              {services.map((service, index) => (
-
+              {directoryData.cards.map((service, index) => (
                 <div
-                  key={index}
+                  key={service.id || index}
                   className="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between group transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-md hover:border-blue-100"
                 >
-
-                  {/* ==========================================
-                      CARD CONTENT
-                  ========================================== */}
                   <div>
-
-                    {/* Service icon */}
+                    {/* Icon wrapper reading parameters dynamically */}
                     <div className="text-3xl mb-4 group-hover:scale-110 transition-transform duration-300 inline-block">
                       {service.icon}
                     </div>
 
-                    {/* Service title */}
+                    {/* Card content title reading from JSON */}
                     <h3 className="text-[#002B5B] font-bold text-base mb-2 transition-colors duration-300 group-hover:text-blue-700">
                       {service.title}
                     </h3>
 
-                    {/* Short service description */}
+                    {/* Brief utility role description mapping */}
                     <p className="text-gray-500 text-xs leading-relaxed font-medium">
                       {service.desc}
                     </p>
-
                   </div>
 
-                  {/* ==========================================
-                      ACTION BUTTON
-                      Opens the selected service page
-                  ========================================== */}
+                  {/* ACTION INTERFACE ANCHOR SELECTION BUTTON */}
                   <div className="mt-8">
-
                     <button
-                      // Save service ID to activeView
-                      // This triggers the detailed page view
                       onClick={() => setActiveView(service.id)}
                       className="w-full text-center text-[11px] font-bold text-blue-600 uppercase tracking-wider py-2.5 px-4 rounded-full border border-blue-200 bg-blue-50/30 transition-all duration-300 group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-600 shadow-sm"
                     >
-                      Read More
+                      {directoryData.controls.actionButton}
                     </button>
-
                   </div>
 
                 </div>
               ))}
-
             </div>
-
           </>
         )}
 
@@ -212,5 +122,4 @@ function ServiceGrid() {
   );
 }
 
-// Export component so it can be used in App.jsx or Routes
 export default ServiceGrid;
