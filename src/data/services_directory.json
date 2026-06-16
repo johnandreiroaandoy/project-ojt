@@ -9,28 +9,30 @@
   },
   "cards": [
     {
-      "id": "financial",
-      "title": "Financial Reporting",
-      "desc": "Preparation of annual and quarterly financial statements.",
-      "icon": "📊"
+      "id": "Certification of Payslip",
+      "title": "Issuance of Certification of Payslip and Index of Payments of City Government Personnel",
+      "icon": "📝"
     },
     {
-      "id": "audit",
-      "title": "Internal Audit",
-      "desc": "Examination of city transactions and control systems.",
-      "icon": "🔍"
+      "id": "Certificate of Remittances",
+      "title": "Issuance of Certificate of Remittances",
+      "icon": "🏦"
     },
     {
-      "id": "claims",
-      "title": "Processing of Claims",
-      "desc": "Review and processing of disbursements and payroll.",
-      "icon": "💳"
+      "id": "Photocopy of Disbursement",
+      "title": "Issuance of Photocopy of Disbursement Voucher/Payroll and Accountant's Advice",
+      "icon": "💵"
     },
     {
-      "id": "barangay",
-      "title": "Barangay Affairs",
+      "id": "Certification on Salary Received",
+      "title": "Issuance of Certification on Salary Received and No Travel Claim",
       "desc": "Technical assistance for barangay financial management.",
-      "icon": "🏘️"
+      "icon": "📜"
+    },
+    {
+      "id": "elap",
+      "title": "Review Application for Trust Fund – Emergency Loan Assistance Program (ELAP)",
+      "icon": "🛡️"
     }
   ]
 }
