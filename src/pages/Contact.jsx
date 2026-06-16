@@ -269,11 +269,14 @@ function Contact() {
               type="email"
               value={email}
               onChange={handleEmailChange}
-              onBlur={autoVerifyEmail} // 🟢 Fires the secure checking runner when focus shifts away from input
+              onBlur={autoVerifyEmail} 
+              readOnly={userAvatar !== ''} // 🟢 Locks field when signed into a Google Account
               placeholder={contactStatic.formLabels.emailPlaceholder}
-              className={`w-full p-4 rounded-xl border bg-white focus:outline-none focus:ring-2 transition-all font-medium text-sm ${
-                verificationStatus === 'invalid' ? 'border-red-400 focus:ring-red-500/10' :
-                verificationStatus === 'verified' ? 'border-green-400 focus:ring-green-500/10' : 'border-gray-200 focus:ring-blue-500/10'
+              className={`w-full p-4 rounded-xl border focus:outline-none focus:ring-2 transition-all font-medium text-sm ${
+                userAvatar !== '' 
+                  ? 'bg-gray-100 border-gray-300 text-gray-500 cursor-not-allowed select-none focus:ring-0' // Locked Visual UI
+                  : verificationStatus === 'invalid' ? 'bg-white border-red-400 focus:ring-red-500/10' :
+                    verificationStatus === 'verified' ? 'bg-white border-green-400 focus:ring-green-500/10' : 'bg-white border-gray-200 focus:ring-blue-500/10'
               }`}
               required
             />
