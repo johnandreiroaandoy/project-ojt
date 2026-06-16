@@ -13,11 +13,14 @@ function Reports() {
   // Dynamic payload master data array hydrated explicitly from the API network query
   const [allReports, setAllReports] = useState([]);
   
-  // Dynamic array tracking only the records matching the selected filtered year
+  // Dynamic array tracking only the records matching BOTH selected filtered year and month
   const [filteredReports, setFilteredReports] = useState([]);
 
   // Tracks which calendar year is actively chosen within the dropdown selector
   const [selectedYear, setSelectedYear] = useState('');
+
+  // 🟢 NEW STATE: Tracks the actively targeted calendar month
+  const [selectedMonth, setSelectedMonth] = useState('all');
   
   // System latency tracker
   const [loading, setLoading] = useState(true);
@@ -52,6 +55,7 @@ function Reports() {
           
           // Default structural initialize: Focus display on modern year 2026 automatically
           setSelectedYear(2026);
+          setSelectedMonth('all');
           setFilteredReports(rawData.filter((report) => Number(report.year) === 2026));
         }
       })
@@ -65,15 +69,32 @@ function Reports() {
   }, []); // Empty array guarantees thread runs exactly once on mount
 
   /* ==========================================================
+      DYNAMIC PROCESSING MULTI-AXIS FILTER ENGINE
+  ========================================================== */
+  const applyFilters = (year, month, masterData) => {
+    let output = masterData.filter((report) => Number(report.year) === Number(year));
+    
+    // If a specific month is selected instead of 'all', filter deeper
+    if (month !== 'all') {
+      output = output.filter((report) => Number(report.month) === Number(month));
+    }
+    
+    setFilteredReports(output);
+  };
+
+  /* ==========================================================
       INTERACTIVE INTERFACE LISTENERS
   ========================================================== */
-  const handleDropdownChange = (e) => {
+  const handleYearChange = (e) => {
     const targetYear = Number(e.target.value);
     setSelectedYear(targetYear);
-    
-    // Intercept client viewport matrix to match selected dropdown index
-    const targetedRows = allReports.filter((report) => Number(report.year) === targetYear);
-    setFilteredReports(targetedRows);
+    applyFilters(targetYear, selectedMonth, allReports);
+  };
+
+  const handleMonthChange = (e) => {
+    const targetMonth = e.target.value;
+    setSelectedMonth(targetMonth);
+    applyFilters(selectedYear, targetMonth, allReports);
   };
 
   return (
@@ -107,37 +128,63 @@ function Reports() {
           </div>
         ) : (
           <>
-            {/* COMPACT STYLED YEAR DROPDOWN CONTROL CONTROLLER */}
-            <div className="flex items-center gap-3 mb-10 border-b border-gray-100 pb-6">
-              <label htmlFor="year-select" className="text-xs font-black uppercase tracking-widest text-gray-400">
-                Filter By Fiscal Year:
-              </label>
+            {/* COMPACT STYLED DUAL FILTER LAYER CONTROL PANEL */}
+            <div className="flex flex-wrap items-center gap-6 mb-10 border-b border-gray-100 pb-6">
               
-              <div className="relative">
-                <select
-                  id="year-select"
-                  value={selectedYear}
-                  onChange={handleDropdownChange}
-                  className="appearance-none bg-gray-50 border border-gray-200 text-[#002B5B] font-black text-xs uppercase tracking-wider py-2.5 pl-5 pr-10 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 cursor-pointer shadow-sm transition-all min-w-[140px]"
-                >
-                  {availableYears.map((year) => (
-                    <option key={year} value={year}>
-                      Fiscal Year {year}
-                    </option>
-                  ))}
-                </select>
-                
-                {/* Structural Dropdown Arrow Vector Indicator */}
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-[#002B5B] font-bold text-[10px]">
-                  ▼
+              {/* FISCAL YEAR FILTER SELECTOR */}
+              <div className="flex items-center gap-3">
+                <label htmlFor="year-select" className="text-xs font-black uppercase tracking-widest text-gray-400 whitespace-nowrap">
+                  Fiscal Year:
+                </label>
+                <div className="relative">
+                  <select
+                    id="year-select"
+                    value={selectedYear}
+                    onChange={handleYearChange}
+                    className="appearance-none bg-gray-50 border border-gray-200 text-[#002B5B] font-black text-xs uppercase tracking-wider py-2.5 pl-5 pr-10 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 cursor-pointer shadow-sm transition-all min-w-[140px]"
+                  >
+                    {availableYears.map((year) => (
+                      <option key={year} value={year}>
+                        Year {year}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-[#002B5B] font-bold text-[10px]">
+                    ▼
+                  </div>
                 </div>
               </div>
+
+              {/* 🟢 ADDED: MONTHLY FILTER DROPDOWN COMPONENT CONTROLLER */}
+              <div className="flex items-center gap-3">
+                <label htmlFor="month-select" className="text-xs font-black uppercase tracking-widest text-gray-400 whitespace-nowrap">
+                  Reporting Month:
+                </label>
+                <div className="relative">
+                  <select
+                    id="month-select"
+                    value={selectedMonth}
+                    onChange={handleMonthChange}
+                    className="appearance-none bg-gray-50 border border-gray-200 text-[#002B5B] font-black text-xs uppercase tracking-wider py-2.5 pl-5 pr-10 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 cursor-pointer shadow-sm transition-all min-w-[140px]"
+                  >
+                    {reportsUI.months.map((m) => (
+                      <option key={m.value} value={m.value}>
+                        {m.label}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-[#002B5B] font-bold text-[10px]">
+                    ▼
+                  </div>
+                </div>
+              </div>
+
             </div>
 
-            {/* SECONDARY CONDITIONAL CHECK: Empty Folder/Year States Handling */}
+            {/* SECONDARY CONDITIONAL CHECK: Empty Folder/Year/Month States Handling */}
             {filteredReports.length === 0 ? (
               <div className="text-center py-16 border border-dashed border-gray-200 rounded-2xl text-gray-400 font-medium text-sm bg-gray-50/50 animate-fadeIn">
-                📭 No operational transparency reports found on file for the year {selectedYear}.
+                📭 No operational transparency records found on file for the chosen criteria.
               </div>
             ) : (
               /* DYNAMIC RECORD MATRIX LOADED VIA DATABASE STREAMS */
@@ -165,7 +212,7 @@ function Reports() {
                       </div>
                     </div>
 
-                    {/* 🟢 FIXED ACTION: PURE ONLINE PREVIEW DISPATCHER (NO LOCAL DOWNLOADING) */}
+                    {/* ACTION: PURE ONLINE PREVIEW DISPATCHER (NO LOCAL DOWNLOADING) */}
                     <div className="mt-4">
                       <a
                         href={`${import.meta.env.VITE_API_BASE_URL}${report.href}`}
