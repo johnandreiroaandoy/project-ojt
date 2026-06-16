@@ -125,29 +125,39 @@ function App() {
           reverseOrder={false}
 
           // Global styling applied to every toast message
-          toastOptions={{
-            style: {
-
-              // Text size
-              fontSize: '14px',
-
-              // Inner spacing
-              padding: '16px',
-
-              // Rounded corners
-              borderRadius: '8px',
-
-              // Shadow effect
-              boxShadow: '0 4px 12px rgba(0,0,0,0.12)',
-
-              // Maximum width of notification
-              maxWidth: '350px',
-
-              // Ensures notifications appear above all elements
-              zIndex: 9999
-            }
-          }}
-        />
+  Toaster
+  position="top-right"
+  toastOptions={{
+    // 🟢 BASE GLOBAL STYLES FOR ALL TOASTS
+    style: {
+      fontSize: '14px',
+      padding: '16px',
+      borderRadius: '8px',
+      maxWidth: '350px',
+      zIndex: 9999,
+    },
+    // 🟢 CUSTOM SUCCESS STYLE (Green theme)
+    success: {
+      style: {
+        background: '#ffffff',
+        color: '#15803d', // Dark green text
+        border: '1px solid #bbf7d0', // Light green border
+        boxShadow: '0 4px 12px rgba(34, 197, 94, 0.3)', // Vivid Green glow shadow
+      },
+    },
+    // 🟢 CUSTOM ERROR & RATE LIMIT STYLE (Red / Amber warning theme)
+    error: {
+      style: {
+        background: '#fff1f2', // Soft reddish-pink tint background
+        color: '#991b1b', // Strong deep crimson red text
+        border: '1px solid #fecdd3', // Soft red border outline
+        boxShadow: '0 4px 12px rgba(239, 68, 68, 0.4)', // Intense red alert glow shadow
+      },
+      // Keeps warning displays active a little longer so users have time to read it
+      duration: 4000, 
+    },
+  }}
+/>
 
       </BrowserRouter>
     </GoogleReCaptchaProvider>
