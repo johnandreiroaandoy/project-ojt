@@ -1,16 +1,65 @@
-import React from 'react';
-
-// Decoupled Structural Content Mapping Source
-// points to the unified office_divisions configuration file asset
-import officeDivisions from '../../data/certification_salary.json';
+import React, { useState, useEffect } from 'react';
 
 function CertificationOnSalaryReceived() {
-  // Extract the specific salary certification context block from the file
-  const content = officeDivisions.salaryCertification;
+  /* ==========================================================
+      STATE VARIABLES
+      Tracks operational lifetimes and asynchronous server inputs
+  ========================================================== */
+  const [content, setContent] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  /* ==========================================================
+      RUNTIME ASYNCHRONOUS ENGINE
+      Streams data from your XAMPP data repository on component mount
+      (Includes dynamic timestamp query to completely bypass cache layers)
+  ========================================================== */
+  useEffect(() => {
+    fetch(`http://localhost/city-api/data/certification_salary.json?v=${new Date().getTime()}`)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Server resource missing. Status code: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then((data) => {
+        // Safe tracking backup: If the layout has a nested object, grab it; otherwise, use root
+        const targetData = data.salaryCertification ? data.salaryCertification : data;
+        setContent(targetData);
+      })
+      .catch((err) => {
+        console.error("Failed to load decentralized salary criteria matrix:", err);
+        setError(err.message);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, []);
+
+  /* ==========================================================
+      LATENCY & FAULT CRITERIA CHECKPOINTS
+  ========================================================== */
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-16 text-gray-400 text-xs font-semibold animate-pulse">
+        🔄 Querying local Apache network and formatting structural data sheets...
+      </div>
+    );
+  }
+
+  if (error || !content) {
+    return (
+      <div className="p-4 bg-red-50 border border-red-200 text-red-800 rounded-xl text-xs font-medium">
+        ⚠️ Infrastructure Error: Unable to extract text parameters from XAMPP configuration target. ({error || "Payload empty"})
+      </div>
+    );
+  }
+
+  // Destructure content fields now that runtime state is hydrated safely
   const { serviceDetails, requirements, processingSteps } = content;
 
   return (
-    <div className="font-sans text-gray-800 max-w-4xl mx-auto">
+    <div className="font-sans text-gray-800 max-w-4xl mx-auto animate-fadeIn">
       
       {/* ==========================================================
           SECTION HEADER (DYNAMIC REGION FROM CITIZEN'S CHARTER)

@@ -1,14 +1,63 @@
-import React from 'react';
-
-// Import decoupled text content exclusively for ELAP layout
-import elapContent from '../../data/services_elap.json';
+import React, { useState, useEffect } from 'react';
 
 function EmergencyLoanAssistance() {
-  // Destructure Citizen's Charter datasets directly from the updated JSON schema
+  /* ==========================================================
+      STATE VARIABLES
+      Tracks network life cycles and dynamic storage payloads
+  ========================================================== */
+  const [elapContent, setElapContent] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  /* ==========================================================
+      RUNTIME ASYNCHRONOUS ENGINE
+      Streams data directly from your XAMPP data folder on mount
+      (Includes an appended timestamp parameter to bypass server/browser caching)
+  ========================================================== */
+  useEffect(() => {
+    fetch(`http://localhost/city-api/data/services_elap.json?v=${new Date().getTime()}`)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Server resource missing. Status code: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then((data) => {
+        setElapContent(data);
+      })
+      .catch((err) => {
+        console.error("Failed to load decentralized ELAP criteria matrix:", err);
+        setError(err.message);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, []);
+
+  /* ==========================================================
+      LATENCY & FAILURE BOUNDARY CONDITIONS
+  ========================================================== */
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-16 text-gray-400 text-xs font-semibold animate-pulse">
+        🔄 Accessing server infrastructure and buffering dynamic loan modules...
+      </div>
+    );
+  }
+
+  if (error || !elapContent) {
+    return (
+      <div className="p-4 bg-red-50 border border-red-200 text-red-800 rounded-xl text-xs font-medium">
+        ⚠️ Infrastructure Error: Unable to extract text parameters from XAMPP configuration target. ({error || "Payload empty"})
+      </div>
+    );
+  }
+
+  // Destructure Citizen's Charter datasets directly after runtime state hydrates safely
   const { serviceDetails, requirements, processingSteps } = elapContent;
 
   return (
-    <div className="font-sans text-gray-800 max-w-4xl mx-auto">
+    <div className="font-sans text-gray-800 max-w-4xl mx-auto animate-fadeIn">
       
       {/* ==========================================================
           SECTION HEADER (DYNAMIC REGION FROM CITIZEN'S CHARTER)

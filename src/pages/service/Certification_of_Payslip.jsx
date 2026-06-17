@@ -1,14 +1,63 @@
-import React from 'react';
-
-// Decoupled Structural Content Mapping Source (Points to your updated schema)
-import financialContent from '../../data/certification_payslip.json';
+import React, { useState, useEffect } from 'react';
 
 function FinancialReporting() {
-  // Destructure variables from our standardized structure for simpler markup access
+  /* ==========================================================
+      STATE VARIABLES
+      Tracks network life cycles and dynamic storage payloads
+  ========================================================== */
+  const [financialContent, setFinancialContent] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  /* ==========================================================
+      RUNTIME ASYNCHRONOUS ENGINE
+      Streams text parameters right out of your local XAMPP asset pool
+      (Includes cache-busting timestamp parameters)
+  ========================================================== */
+  useEffect(() => {
+    fetch(`http://localhost/city-api/data/certification_payslip.json?v=${new Date().getTime()}`)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Server resource missing. Status code: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then((data) => {
+        setFinancialContent(data);
+      })
+      .catch((err) => {
+        console.error("Failed to load external configuration metrics:", err);
+        setError(err.message);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, []);
+
+  /* ==========================================================
+      LATENCY & FAILURE BOUNDARY CONDITIONS
+  ========================================================== */
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-16 text-gray-400 text-xs font-semibold animate-pulse">
+        🔄 Connecting to server workspace and buffering service frameworks...
+      </div>
+    );
+  }
+
+  if (error || !financialContent) {
+    return (
+      <div className="p-4 bg-red-50 border border-red-200 text-red-800 rounded-xl text-xs font-medium">
+        ⚠️ System Error: Unable to extract decentralized asset sheets from the Apache server environment. ({error || "No data payload returned"})
+      </div>
+    );
+  }
+
+  // Destructure content fields once the JSON state evaluates safely
   const { serviceDetails, requirements, processingSteps } = financialContent;
 
   return (
-    <div className="font-sans text-gray-800 max-w-4xl mx-auto">
+    <div className="font-sans text-gray-800 max-w-4xl mx-auto animate-fadeIn">
       
       {/* ==========================================================
           SECTION HEADER (DYNAMIC REGION FROM CITIZEN'S CHARTER)

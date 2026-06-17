@@ -1,27 +1,51 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 /* ==========================================================
     COMPONENT IMPORT MATRIX (Matches file system exactly)
 ========================================================== */
 import CertificationOfPayslip from './service/Certification_of_Payslip.jsx';
-import CertificateOfRemittances from './service/Certificate_of_Remittances.jsx'; // Note: Keeps the space from image_5aed9f.png
+import CertificateOfRemittances from './service/Certificate_of_Remittances.jsx';
 import PhotocopyOfDisbursement from './service/Photocopy_of_Disbursement.jsx';
 import CertificationOnSalaryReceived from './service/Certification_on_Salary_Received.jsx';
 import EmergencyLoanAssistance from './service/Emergency_Loan_Assistance.jsx';
 
-// Decoupled Structural Content Mapping Source
-import directoryData from '../data/services_directory.json';
-
 function ServiceGrid() {
   /* ==========================================================
-      STATE VARIABLE
-      Tracks which detailed sub-page component view is open
+      STATE VARIABLES
   ========================================================== */
   const [activeView, setActiveView] = useState(null);
+  
+  // Holds the server directory UI configuration and a latency tracker
+  const [directoryData, setDirectoryData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  /* ==========================================================
+      FETCH THE DIRECTORY LAYOUT CONFIGURATION FROM XAMPP
+      (Includes dynamic cache-busting timestamp string)
+  ========================================================== */
+  useEffect(() => {
+    fetch(`http://localhost/city-api/data/services_directory.json?v=${new Date().getTime()}`)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Directory configuration missing on server. Status: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then((data) => {
+        setDirectoryData(data);
+      })
+      .catch((error) => {
+        console.error('Error fetching external services directory:', error);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, []);
 
   /* ==========================================================
       COMPONENT SWITCHER
-      Maps the unique JSON card IDs to the imported sub-pages
+      🎯 CRITICAL: Ensure the "id" properties inside your 
+      services_directory.json cards array match these strings exactly!
   ========================================================== */
   const renderSelectedComponent = () => {
     switch (activeView) {
@@ -33,12 +57,36 @@ function ServiceGrid() {
         return <PhotocopyOfDisbursement />;
       case 'Certification on Salary Received':
         return <CertificationOnSalaryReceived />;
-      case 'elap':
+      case 'elap': // Fallback string token for Emergency Loan Assistance layout
+      case 'Emergency Loan Assistance': 
         return <EmergencyLoanAssistance />;
       default:
-        return null;
+        return (
+          <div className="text-center py-6 text-xs text-gray-400 font-medium">
+            ⚠️ View mapping error: Selected route "{activeView}" matches no structural component target.
+          </div>
+        );
     }
   };
+
+  /* ==========================================================
+      GUARD LAYOUT RENDER STAGES
+  ========================================================== */
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20 text-gray-400 text-sm font-semibold animate-pulse">
+        🔄 Accessing server infrastructure and loading main directory layouts...
+      </div>
+    );
+  }
+
+  if (!directoryData) {
+    return (
+      <div className="max-w-5xl mx-auto my-10 p-4 bg-red-50 text-red-800 rounded-xl text-sm font-medium border border-red-200">
+        ⚠️ Infrastructure Error: Unable to fetch external services directory parameters from XAMPP.
+      </div>
+    );
+  }
 
   return (
     <section
@@ -57,7 +105,7 @@ function ServiceGrid() {
                 onClick={() => setActiveView(null)}
                 className="text-xs font-bold text-blue-600 hover:text-[#002B5B] uppercase tracking-wider transition-colors inline-flex items-center gap-2 cursor-pointer"
               >
-                {directoryData.controls.backButton}
+                {directoryData.controls?.backButton || "← Return to Directory"}
               </button>
             </div>
 
@@ -74,16 +122,16 @@ function ServiceGrid() {
             {/* COMPONENT TITLE ROW EXTRACTED FROM METADATA JSON */}
             <div className="mb-12 border-l-4 border-[#002B5B] pl-6">
               <h2 className="text-[#002B5B] text-4xl font-black uppercase tracking-tight">
-                {directoryData.header.title}
+                {directoryData.header?.title || "Citizen's Charter Directory"}
               </h2>
               <p className="text-gray-500 text-sm font-medium mt-1">
-                {directoryData.header.subtitle}
+                {directoryData.header?.subtitle || "Select an operational service node below to track required documentation paths."}
               </p>
             </div>
 
             {/* INTERACTIVE COMPONENT CARD MENU GRID */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {directoryData.cards.map((service, index) => (
+              {directoryData.cards?.map((service, index) => (
                 <div
                   key={service.id || index}
                   className="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between group transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-md hover:border-blue-100"
@@ -91,7 +139,7 @@ function ServiceGrid() {
                   <div>
                     {/* Icon wrapper reading parameters dynamically */}
                     <div className="text-3xl mb-4 group-hover:scale-110 transition-transform duration-300 inline-block">
-                      {service.icon}
+                      {service.icon || "📂"}
                     </div>
 
                     {/* Card content title reading from JSON */}
@@ -111,7 +159,7 @@ function ServiceGrid() {
                       onClick={() => setActiveView(service.id)}
                       className="w-full text-center text-[11px] font-bold text-blue-600 uppercase tracking-wider py-2.5 px-4 rounded-full border border-blue-200 bg-blue-50/30 transition-all duration-300 group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-600 shadow-sm cursor-pointer"
                     >
-                      {directoryData.controls.actionButton}
+                      {directoryData.controls?.actionButton || "View Requirements →"}
                     </button>
                   </div>
 

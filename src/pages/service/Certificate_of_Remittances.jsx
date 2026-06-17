@@ -1,15 +1,63 @@
-import React from 'react';
-
-// Decoupled Structural Content Mapping Source
-// Verify this path matches where you saved your updated JSON file
-import auditContent from '../../data/certificate_remittances.json';
+import React, { useState, useEffect } from 'react';
 
 function CertificateRemittances() {
-  // Destructure unified Citizen's Charter variables from the configuration asset
+  /* ==========================================================
+      STATE VARIABLES
+      Tracks network delivery and stores remote server configurations
+  ========================================================== */
+  const [auditContent, setAuditContent] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  /* ==========================================================
+      RUNTIME ASYNCHRONOUS ENGINE
+      Fires instantly when the tree node mounts to pull data from XAMPP
+      (Includes dynamic cache-busting parameter to bypass caching)
+  ========================================================== */
+  useEffect(() => {
+    fetch(`http://localhost/city-api/data/certificate_remittances.json?v=${new Date().getTime()}`)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Server tracking asset missing. Status code: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then((data) => {
+        setAuditContent(data);
+      })
+      .catch((err) => {
+        console.error("Failed to load external infrastructure parameters:", err);
+        setError(err.message);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, []);
+
+  /* ==========================================================
+      LATENCY & GUARD STATUS CHECKPOINTS
+  ========================================================== */
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-16 text-gray-400 text-xs font-semibold animate-pulse">
+        🔄 Accessing server infrastructure and streaming chart matrices...
+      </div>
+    );
+  }
+
+  if (error || !auditContent) {
+    return (
+      <div className="p-4 bg-red-50 border border-red-200 text-red-800 rounded-xl text-xs font-medium">
+        ⚠️ Content Delivery Error: Unable to sync server criteria sheet parameters. ({error || "Asset empty"})
+      </div>
+    );
+  }
+
+  // Destructure unified Citizen's Charter variables once server data drops into state safely
   const { serviceDetails, requirements, processingSteps } = auditContent;
 
   return (
-    <div className="font-sans text-gray-800 max-w-4xl mx-auto">
+    <div className="font-sans text-gray-800 max-w-4xl mx-auto animate-fadeIn">
       
       {/* ==========================================================
           SECTION HEADER (DYNAMIC REGION FROM CITIZEN'S CHARTER)

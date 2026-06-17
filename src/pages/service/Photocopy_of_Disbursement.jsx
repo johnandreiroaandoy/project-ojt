@@ -1,15 +1,63 @@
-import React from 'react';
-
-// Decoupled Structural Content Mapping Source
-// Points directly to your updated services_claims JSON configuration asset
-import claimsContent from '../../data/photocopy_disbursement.json';
+import React, { useState, useEffect } from 'react';
 
 function PhotocopyOfDisbursement() {
-  // Destructure Citizen's Charter variables directly from the schema asset
+  /* ==========================================================
+      STATE VARIABLES
+      Tracks network delivery cycles and captures dynamic JSON payloads
+  ========================================================== */
+  const [claimsContent, setClaimsContent] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  /* ==========================================================
+      RUNTIME ASYNCHRONOUS ENGINE
+      Fires instantly on component mount to pull parameters from XAMPP
+      (Includes dynamic unique parameter values to override aggressive caches)
+  ========================================================== */
+  useEffect(() => {
+    fetch(`http://localhost/city-api/data/photocopy_disbursement.json?v=${new Date().getTime()}`)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Server tracking asset missing. Status code: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then((data) => {
+        setClaimsContent(data);
+      })
+      .catch((err) => {
+        console.error("Failed to load decentralized disbursement matrix:", err);
+        setError(err.message);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, []);
+
+  /* ==========================================================
+      LATENCY & FAULT BOUNDARY CONDITIONS
+  ========================================================== */
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-16 text-gray-400 text-xs font-semibold animate-pulse">
+        🔄 Accessing server workspace and streaming transaction schemas...
+      </div>
+    );
+  }
+
+  if (error || !claimsContent) {
+    return (
+      <div className="p-4 bg-red-50 border border-red-200 text-red-800 rounded-xl text-xs font-medium">
+        ⚠️ Infrastructure Error: Unable to sync server criteria parameters from XAMPP target file. ({error || "Asset empty"})
+      </div>
+    );
+  }
+
+  // Destructure Citizen's Charter variables once runtime state holds data safely
   const { serviceDetails, requirements, processingSteps } = claimsContent;
 
   return (
-    <div className="font-sans text-gray-800 max-w-4xl mx-auto">
+    <div className="font-sans text-gray-800 max-w-4xl mx-auto animate-fadeIn">
       
       {/* ==========================================================
           SECTION HEADER (DYNAMIC REGION FROM CITIZEN'S CHARTER)
