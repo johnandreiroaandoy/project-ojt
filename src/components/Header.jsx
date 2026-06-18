@@ -4,7 +4,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 // Decoupled Structural Content Mapping Source
 import headerData from '../data/header_data.json';
 
-function Header() {
+function Header({ onOpenAdminLogin }) {
   const location = useLocation();
   const [time, setTime] = useState(new Date());
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -92,8 +92,18 @@ function Header() {
           <button className="p-2.5 hover:scale-135 hover:bg-gray-100 rounded-full transition-all">
             <img src={headerData.branding.searchIconSrc} alt={headerData.branding.searchAlt} className="w-5 h-5 opacity-100" />
           </button>
-          <div className="hidden sm:block border-l pl-6 border-gray-200">
+          
+          {/* DESKTOP RIGHT ASSET SECTION */}
+          <div className="hidden sm:flex items-center border-l pl-6 border-gray-200 gap-4">
             <img src={headerData.branding.isoSrc} alt={headerData.branding.isoAlt} className="h-11 grayscale opacity-80" />
+            
+            {/* ADMINISTRATOR LOGIN ACTION TRIGGER */}
+            <button 
+              onClick={onOpenAdminLogin}
+              className="text-[10px] font-black uppercase tracking-wider text-[#002B5B] border-2 border-[#002B5B] py-2 px-4 rounded-xl transition-all duration-300 bg-transparent hover:bg-[#002B5B] hover:text-white hover:shadow-md cursor-pointer outline-none"
+            >
+              Login as Administrator
+            </button>
           </div>
 
           {/* HAMBURGER BUTTON (MOBILE) */}
@@ -112,7 +122,7 @@ function Header() {
       {/* ==========================================================
           3. MOBILE DROPDOWN PANEL
       ========================================================== */}
-      <div className={`lg:hidden w-full bg-white border-b border-gray-200 transition-all duration-300 ease-in-out overflow-hidden ${isMenuOpen ? 'max-h-72 opacity-100' : 'max-h-0 opacity-0'}`}>
+      <div className={`lg:hidden w-full bg-white border-b border-gray-200 transition-all duration-300 ease-in-out overflow-hidden ${isMenuOpen ? 'max-h-[340px] opacity-100' : 'max-h-0 opacity-0'}`}>
         <div className="px-6 py-4 flex flex-col space-y-3 font-extrabold text-sm text-[#2d3436]">
           {headerData.navLinks.map((link) => (
             <NavLink
@@ -124,6 +134,19 @@ function Header() {
               {link.name}
             </NavLink>
           ))}
+          
+          {/* MOBILE ADAPTIVE BUTTON FOR ADMIN PORTAL OVERLAY */}
+          <div className="pt-2 border-t border-gray-100">
+            <button
+              onClick={() => {
+                setIsMenuOpen(false);
+                onOpenAdminLogin();
+              }}
+              className="w-full text-center text-xs font-black uppercase tracking-wider bg-gray-50 text-[#002B5B] py-3 rounded-xl border border-gray-200/60 cursor-pointer"
+            >
+              🔒 Login as Administrator
+            </button>
+          </div>
         </div>
       </div>
 
