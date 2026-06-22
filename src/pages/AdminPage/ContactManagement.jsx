@@ -35,7 +35,7 @@ function ContactManagement({ state, setState, onSave }) {
   return (
     <div className="space-y-6">
       <h2 className="text-md font-black text-[#002B5B] uppercase tracking-wide border-b pb-3">
-        📞 Office Locations & Contact Gateways (contact_info.json)
+        📞 Office Locations & Contact Gateways 
       </h2>
       
       <div className="space-y-5">

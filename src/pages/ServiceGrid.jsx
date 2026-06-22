@@ -19,15 +19,13 @@ function ServiceGrid() {
   const [directoryData, setDirectoryData] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // 🟢 Grab the centralized environment base API URL
+  // Centralized environment base API URL
   const baseUrl = import.meta.env.VITE_API_BASE_URL;
 
   /* ==========================================================
       FETCH THE DIRECTORY LAYOUT CONFIGURATION FROM XAMPP
-      (Includes dynamic cache-busting timestamp string)
   ========================================================== */
   useEffect(() => {
-    // 🟢 FIXED: Swapped static directory string for dynamic baseUrl integration
     fetch(`${baseUrl}/data/services_directory.json?v=${new Date().getTime()}`)
       .then((response) => {
         if (!response.ok) {
@@ -42,17 +40,19 @@ function ServiceGrid() {
         console.error('Error fetching external services directory:', error);
       })
       .finally(() => {
-        setLoading(false);
+        loading(false);
       });
   }, [baseUrl]);
 
   /* ==========================================================
       COMPONENT SWITCHER
-      🎯 CRITICAL: Ensure the "id" properties inside your 
-      services_directory.json cards array match these strings exactly!
+      🎯 FIXED: Added .trim() to clean up hidden string whitespaces 
   ========================================================== */
   const renderSelectedComponent = () => {
-    switch (activeView) {
+    // Strips trailing spaces so "Certification of Payslip " accurately routes to "Certification of Payslip"
+    const normalizedView = activeView ? activeView.trim() : '';
+
+    switch (normalizedView) {
       case 'Certification of Payslip':
         return <CertificationOfPayslip />;
       case 'Certificate of Remittances':
@@ -61,7 +61,7 @@ function ServiceGrid() {
         return <PhotocopyOfDisbursement />;
       case 'Certification on Salary Received':
         return <CertificationOnSalaryReceived />;
-      case 'elap': // Fallback string token for Emergency Loan Assistance layout
+      case 'elap': 
       case 'Emergency Loan Assistance': 
         return <EmergencyLoanAssistance />;
       default:

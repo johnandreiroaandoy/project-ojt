@@ -97,7 +97,6 @@ function ServicesManagement({ state, setState, onSave }) {
         {/* Clickable Card Pipeline */}
         <div className="grid grid-cols-1 sm:grid-cols-5 gap-3 pt-1">
           {cardsList.map((card, idx) => {
-            // Guarantee a unique node rendering key identification point
             const fallbackKey = card.id ? `matrix-node-${card.id}` : `matrix-node-idx-${idx}`;
             return (
               <button
@@ -182,8 +181,9 @@ function ServicesManagement({ state, setState, onSave }) {
 
         <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-2">
           {cardsList.map((card, index) => {
-            // ✨ STABLE RENDER KEYS LINKED DIRECTLY TO THE VALUE OBJECT
-            const rowStableKey = card.id ? `card-block-id-${card.id}` : `card-block-idx-${index}`;
+            // 🚀 FIXED: Changed rowStableKey to point strictly to the stable loop index 
+            // This prevents losing text focus when editing dynamic input strings
+            const rowStableKey = `card-block-row-idx-${index}`;
             
             return (
               <div key={rowStableKey} className="p-4 bg-white border border-slate-200 rounded-xl space-y-3 relative group shadow-sm hover:border-slate-300 transition-colors">
