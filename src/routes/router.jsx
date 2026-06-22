@@ -25,6 +25,12 @@ import Reports from '../pages/Reports.jsx';
 // Contact page
 import Contact from '../pages/Contact.jsx';
 
+// Login Authentication Gateway Portal page
+import Login from '../pages/Login.jsx';
+
+// 🟢 FIXED: Swapped out ContentManagement for your new organized folder directory orchestrator
+import AdminDashboard from '../pages/AdminPage/AdminDashboard.jsx';
+
 /* ==========================================================
    ROUTER COMPONENT
    Handles navigation between pages without reloading
@@ -71,24 +77,26 @@ function Router() {
       {/* ==================================================
           SERVICES PAGE
           Contains all service categories and detailed views
-          
-          NOTE:
-          Only one route is needed because the ServiceGrid
-          component handles its own page switching using
-          React state.
       ================================================== */}
       <Route path="/services" element={<ServiceGrid />} />
+
+      {/* ==================================================
+          SECURE LOGIN AUTHENTICATION ROUTE
+          Provides a gate entry form for administrative staff
+      ================================================== */}
+      <Route path="/login" element={<Login />} />
+
+      {/* ==================================================
+          🟢 FIXED: CENTRAL ADMIN DASHBOARD PANEL ROUTE
+          Points to your clean, tab-separated modular workspace views
+      ================================================== */}
+      <Route path="/admin" element={<AdminDashboard />} />
 
       {/* ==================================================
           404 PAGE (NOT FOUND)
           
           This route catches any URL that does not match
           the routes above.
-          
-          Example:
-          /abc
-          /unknown-page
-          /test
       ================================================== */}
       <Route
         path="*"

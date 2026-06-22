@@ -19,12 +19,16 @@ function ServiceGrid() {
   const [directoryData, setDirectoryData] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // 🟢 Grab the centralized environment base API URL
+  const baseUrl = import.meta.env.VITE_API_BASE_URL;
+
   /* ==========================================================
       FETCH THE DIRECTORY LAYOUT CONFIGURATION FROM XAMPP
       (Includes dynamic cache-busting timestamp string)
   ========================================================== */
   useEffect(() => {
-    fetch(`http://localhost/city-api/data/services_directory.json?v=${new Date().getTime()}`)
+    // 🟢 FIXED: Swapped static directory string for dynamic baseUrl integration
+    fetch(`${baseUrl}/data/services_directory.json?v=${new Date().getTime()}`)
       .then((response) => {
         if (!response.ok) {
           throw new Error(`Directory configuration missing on server. Status: ${response.status}`);
@@ -40,7 +44,7 @@ function ServiceGrid() {
       .finally(() => {
         setLoading(false);
       });
-  }, []);
+  }, [baseUrl]);
 
   /* ==========================================================
       COMPONENT SWITCHER
@@ -83,7 +87,11 @@ function ServiceGrid() {
   if (!directoryData) {
     return (
       <div className="max-w-5xl mx-auto my-10 p-4 bg-red-50 text-red-800 rounded-xl text-sm font-medium border border-red-200">
-        ⚠️ Infrastructure Error: Unable to fetch external services directory parameters from XAMPP.
+        ⚠️ Infrastructure Error: Unable to fetch external services directory parameters from local server.
+        <br />
+        <span className="text-xs font-normal text-red-600 block mt-2">
+          Verify that your configuration json asset is placed inside: <code className="font-mono bg-red-100/50 px-1 py-0.5 rounded">C:\xampp\htdocs\backend-project-ojt\public\data\services_directory.json</code>
+        </span>
       </div>
     );
   }

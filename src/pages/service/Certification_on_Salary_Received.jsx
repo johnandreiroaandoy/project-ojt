@@ -9,13 +9,17 @@ function CertificationOnSalaryReceived() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // 🟢 Grab the centralized environment base API URL
+  const baseUrl = import.meta.env.VITE_API_BASE_URL;
+
   /* ==========================================================
       RUNTIME ASYNCHRONOUS ENGINE
       Streams data from your XAMPP data repository on component mount
       (Includes dynamic timestamp query to completely bypass cache layers)
   ========================================================== */
   useEffect(() => {
-    fetch(`http://localhost/city-api/data/certification_salary.json?v=${new Date().getTime()}`)
+    // 🟢 FIXED: Swapped static directory string for dynamic baseUrl integration
+    fetch(`${baseUrl}/data/certification_salary.json?v=${new Date().getTime()}`)
       .then((response) => {
         if (!response.ok) {
           throw new Error(`Server resource missing. Status code: ${response.status}`);
@@ -34,7 +38,7 @@ function CertificationOnSalaryReceived() {
       .finally(() => {
         setLoading(false);
       });
-  }, []);
+  }, [baseUrl]);
 
   /* ==========================================================
       LATENCY & FAULT CRITERIA CHECKPOINTS
@@ -50,7 +54,11 @@ function CertificationOnSalaryReceived() {
   if (error || !content) {
     return (
       <div className="p-4 bg-red-50 border border-red-200 text-red-800 rounded-xl text-xs font-medium">
-        ⚠️ Infrastructure Error: Unable to extract text parameters from XAMPP configuration target. ({error || "Payload empty"})
+        ⚠️ Infrastructure Error: Unable to extract text parameters from local server configuration target. ({error || "Payload empty"})
+        <br />
+        <span className="text-[10px] font-normal text-red-600 block mt-2 font-mono">
+          Target path check: C:\xampp\htdocs\backend-project-ojt\public\data\certification_salary.json
+        </span>
       </div>
     );
   }

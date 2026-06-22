@@ -5,18 +5,49 @@ import toast from 'react-hot-toast';
 // Vector Lucide Blueprint Imports
 import { MapPin, Phone, Mail } from 'lucide-react';
 
-// Decoupled Structural Content Mapping Source
-import contactStatic from '../data/contact_content.json';
-
 function Contact() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  /* ==========================================================
+      STATE CONFIGURATIONS FOR REMOTE DECOUPLED MATRIX
+  ========================================================== */
+  const [contactStatic, setContactStatic] = useState(null);
+  const [loading, setLoading] = useState(true);
+
   // VERIFICATION TRACKER STATES
   const [verificationStatus, setVerificationStatus] = useState(null); // 'checking' | 'verified' | 'invalid' | null
   const [userAvatar, setUserAvatar] = useState('');
+
+  // 🟢 Grab the base URL dynamically from your centralized .env environment configurations
+  const baseUrl = import.meta.env.VITE_API_BASE_URL;
+
+  /* ==========================================================
+      FETCH STRUCTURAL CONTENT CONFIG FROM LOCAL XAMPP
+  ========================================================== */
+  useEffect(() => {
+    const cacheBuster = `?v=${new Date().getTime()}`;
+
+    // 🟢 FIXED: Target the live unified data server schema using the environment baseUrl
+    fetch(`${baseUrl}/data/contact_info.json${cacheBuster}`)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Contact static configurations missing on XAMPP server. Status: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then((data) => {
+        setContactStatic(data);
+      })
+      .catch((error) => {
+        console.error('Error synchronizing layout static assets for Contact view:', error);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, [baseUrl]);
 
   // Clear verification status if they start typing a fresh email manually
   const handleEmailChange = (e) => {
@@ -55,6 +86,9 @@ function Contact() {
 
   // INITIALIZE GOOGLE ON MOUNT
   useEffect(() => {
+    // Prevent execution if remote file properties have not cleanly completed mounting
+    if (loading || !contactStatic) return;
+
     const initializeGoogleButton = () => {
       /* global google */
       if (typeof google !== 'undefined' && document.getElementById('googleButtonContainer')) {
@@ -77,7 +111,7 @@ function Contact() {
     }
 
     return () => window.removeEventListener('load', initializeGoogleButton);
-  }, [verificationStatus]);
+  }, [loading, contactStatic, verificationStatus]);
 
   // AUTOMATIC BACKGROUND RUNNER FOR MANUAL TYPING (CORS SAFE VIA PHP BACKEND)
   const autoVerifyEmail = async () => {
@@ -91,7 +125,7 @@ function Contact() {
     setVerificationStatus('checking');
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/verify-email`, {
+      const response = await fetch(`${baseUrl}/api/verify-email`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: targetEmail })
@@ -124,7 +158,7 @@ function Contact() {
     const formData = { name, email, message };
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/contact`, {
+      const response = await fetch(`${baseUrl}/api/contact`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
@@ -150,6 +184,47 @@ function Contact() {
     }
   };
 
+  /* ==========================================================
+      GUARD LAYOUT RENDER STAGES
+  ========================================================== */
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-32 text-gray-400 text-sm font-semibold max-w-7xl mx-auto animate-pulse select-none">
+        🔄 Connecting to asset structural database layers...
+      </div>
+    );
+  }
+
+  if (!contactStatic) {
+    return (
+      <div className="max-w-7xl mx-auto my-12 p-6 bg-red-50 text-red-800 rounded-2xl text-sm font-bold border border-red-100 shadow-sm">
+        ⚠️ Infrastructure Error: Unable to fetch form configurations from local XAMPP system runtime environment.
+        <br />
+        <span className="text-xs font-normal text-red-600 block mt-2">
+          Please confirm that <code className="font-mono bg-red-100/50 px-1 py-0.5 rounded">contact_info.json</code> exists inside your local <code className="font-mono bg-red-100/50 px-1 py-0.5 rounded">C:\xampp\htdocs\backend-project-ojt\public\data\</code> directory.
+        </span>
+      </div>
+    );
+  }
+
+  // Safe semantic mapping array derived from your unified schema
+  const infoCards = [
+    { id: 'phone', label: 'Telephone Line', value: contactStatic.phoneNumber || "N/A" },
+    { id: 'email', label: 'Official Mailing Link', value: contactStatic.emails ? contactStatic.emails[0] : "N/A" },
+    { id: 'address', label: 'Office Premises Location', value: `${contactStatic.building || ''}, ${contactStatic.street || ''}, ${contactStatic.city || ''}` }
+  ];
+
+  const formLabels = {
+    name: "Full Name",
+    namePlaceholder: "Enter fullname...",
+    email: "Email Address",
+    emailPlaceholder: "Enter email link...",
+    message: "Message",
+    messagePlaceholder: "Type text details...",
+    btnDefault: "Submit",
+    btnSending: "Sending..."
+  };
+
   return (
     <section className="py-20 px-4 md:px-12 bg-white animate-fadeIn">
       <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-16">
@@ -157,14 +232,14 @@ function Contact() {
         {/* ================= LEFT SIDE: CONTACT INFORMATION ================= */}
         <div>
           <h2 className="text-[#002B5B] text-4xl font-black uppercase tracking-tighter mb-6">
-            {contactStatic.title}
+            Contact Us
           </h2>
           <p className="text-gray-600 mb-8 leading-relaxed">
-            {contactStatic.description}
+            {contactStatic.heading || "Get in touch with our operations center directly."}
           </p>
 
           <div className="flex flex-col gap-4 max-w-md w-full">
-            {contactStatic.infoCards.map((card) => {
+            {infoCards.map((card) => {
               const IconComponent = 
                 card.id === 'phone' ? Phone : 
                 card.id === 'email' ? Mail : MapPin;
@@ -188,7 +263,7 @@ function Contact() {
         </div>
 
         {/* ================= RIGHT SIDE: CONTACT FORM ================= */}
-        <form onSubmit={handleSubmit} className="bg-[#f8f9fa] p-8 md:p-10 rounded-3xl border border-blue-800 shadow-2xl space-y-5">
+        <form onSubmit={handleSubmit} className="bg-[#f8f9fa] p-8 md:p-10 rounded-3xl border border-slate-200 shadow-2xl space-y-5">
           
           {/* GOOGLE INTEGRATION PORTAL SECTION */}
           {userAvatar === '' ? (
@@ -223,13 +298,13 @@ function Contact() {
           {/* Full Name Input */}
           <div className="space-y-2">
             <label className="text-[10px] font-black text-gray-400 uppercase ml-2">
-              {contactStatic.formLabels.name}
+              {formLabels.name}
             </label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder={contactStatic.formLabels.namePlaceholder}
+              placeholder={formLabels.namePlaceholder}
               className="w-full p-4 rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all font-medium text-sm"
               required
             />
@@ -239,7 +314,7 @@ function Contact() {
           <div className="space-y-2 relative">
             <div className="flex justify-between items-center mr-2">
               <label className="text-[10px] font-black text-gray-400 uppercase ml-2">
-                {contactStatic.formLabels.email}
+                {formLabels.email}
               </label>
               
               {/* DYNAMIC STATUS INDICATOR DOT */}
@@ -270,8 +345,8 @@ function Contact() {
               value={email}
               onChange={handleEmailChange}
               onBlur={autoVerifyEmail} 
-              readOnly={userAvatar !== ''} // 🟢 Locks field when signed into a Google Account
-              placeholder={contactStatic.formLabels.emailPlaceholder}
+              readOnly={userAvatar !== ''} // Locks field when signed into a Google Account
+              placeholder={formLabels.emailPlaceholder}
               className={`w-full p-4 rounded-xl border focus:outline-none focus:ring-2 transition-all font-medium text-sm ${
                 userAvatar !== '' 
                   ? 'bg-gray-100 border-gray-300 text-gray-500 cursor-not-allowed select-none focus:ring-0' // Locked Visual UI
@@ -285,12 +360,12 @@ function Contact() {
           {/* Message Text Area */}
           <div className="space-y-2">
             <label className="text-[10px] font-black text-gray-400 uppercase ml-2">
-              {contactStatic.formLabels.message}
+              {formLabels.message}
             </label>
             <textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              placeholder={contactStatic.formLabels.messagePlaceholder}
+              placeholder={formLabels.messagePlaceholder}
               rows="4"
               className="w-full p-4 rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all resize-none font-medium text-sm"
               required
@@ -300,12 +375,12 @@ function Contact() {
           {/* Submit Button */}
           <div className="pt-2">
             <Button type="submit" disabled={isSubmitting || verificationStatus === 'invalid' || verificationStatus === 'checking'}>
-              {isSubmitting ? contactStatic.formLabels.btnSending : contactStatic.formLabels.btnDefault}
+              {isSubmitting ? formLabels.btnSending : formLabels.btnDefault}
             </Button>
           </div>
 
           <p className="text-[10px] text-center text-gray-400 italic">
-            {contactStatic.privacyNotice}
+            Your personal data transmission parameters are protected under standard security profiles.
           </p>
         </form>
 
