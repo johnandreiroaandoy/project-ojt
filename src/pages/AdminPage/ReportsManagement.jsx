@@ -7,6 +7,9 @@ function ReportsManagement() {
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
+  // 🍞 State to manage native UI banner feedback alerts
+  const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
+
   // 📂 Base URL configuration targeting your custom framework's clean structural API endpoints
   const API_BASE_URL = 'http://localhost/backend-project-ojt/api';
 
@@ -16,6 +19,21 @@ function ReportsManagement() {
     { value: "7", label: "July" }, { value: "8", label: "August" }, { value: "9", label: "September" },
     { value: "10", label: "October" }, { value: "11", label: "November" }, { value: "12", label: "December" }
   ];
+
+  // Helper trigger function to emit real-time status banners
+  const showNotification = (message, type = 'success') => {
+    setToast({ visible: true, message, type });
+  };
+
+  // Close effect wrapper ensuring notification threads dissolve accurately after 4 seconds
+  useEffect(() => {
+    if (toast.visible) {
+      const durationTimer = setTimeout(() => {
+        setToast(prev => ({ ...prev, visible: false }));
+      }, 4000);
+      return () => clearTimeout(durationTimer);
+    }
+  }, [toast.visible]);
 
   // READ Lifecycle: Fetch active entries dynamically on initialization load
   useEffect(() => {
@@ -53,13 +71,12 @@ function ReportsManagement() {
   const handleUploadSubmit = async (e) => {
     e.preventDefault();
     if (!newReport.title || !selectedFile) {
-      alert("⚠️ Fill out target category title parameters and attach a file binary.");
+      showNotification("⚠️ Fill out target category title parameters and attach a file binary.", "error");
       return;
     }
 
     setIsUploading(true);
     
-    // Constructing standard multipart/form-data payload stream
     const formData = new FormData();
     formData.append('title', newReport.title);
     formData.append('year', newReport.year);
@@ -69,8 +86,6 @@ function ReportsManagement() {
     try {
       const res = await fetch(`${API_BASE_URL}/reports/upload`, {
         method: 'POST',
-        // ⚠️ NOTE: No 'headers' content-type parameter is added here.
-        // Leaving it out entirely forces the browser to set the boundary string configuration automatically.
         body: formData,
       });
       
@@ -78,27 +93,25 @@ function ReportsManagement() {
       const result = await res.json();
 
       if (result.status === "success") {
-        alert("🎉 Document file processed, saved to storage directory and cataloged successfully!");
+        // 🚀 SUCCESS TOAST TRIGGERED HERE
+        showNotification("🎉 Document file processed, saved to storage directory and cataloged successfully!", "success");
         
-        // Dynamically append the newly generated record payload onto your local tracking array queue
         const freshRecord = result.newRecord || result.data;
         if (freshRecord) {
           setReports(prev => [freshRecord, ...prev]);
         } else {
-          fetchActiveReports(); // Fallback auto-fetch if controller payload format is minimized
+          fetchActiveReports();
         }
 
-        // Reset state inputs cleanly
         setNewReport({ title: '', year: new Date().getFullYear().toString(), month: '1' });
         setSelectedFile(null);
         e.target.reset(); 
       } else {
-        // If your controller returns validation errors, show the exact backend explanation string
-        alert(`❌ Server validation fault: ${result.message}`);
+        showNotification(`❌ Server validation fault: ${result.message}`, "error");
       }
     } catch (err) {
       console.error(err);
-      alert("❌ Communication loop broken. Confirm your local XAMPP/Apache rewrite permissions and CORS rules are running perfectly.");
+      showNotification("❌ Communication loop broken. Confirm your local XAMPP settings and CORS rules.", "error");
     } finally {
       setIsUploading(false);
     }
@@ -107,7 +120,7 @@ function ReportsManagement() {
   // DELETE Real-time Database Operation Handler Loop
   const handleDeleteItem = async (reportId, currentIndex) => {
     if (!reportId) {
-      alert("❌ Cannot delete item: Missing valid database primary tracking identifier.");
+      showNotification("❌ Cannot delete item: Missing valid database tracking identifier.", "error");
       return;
     }
     if (!window.confirm("🚨 Delete this item entirely from the live database and file repository disk?")) return;
@@ -124,18 +137,38 @@ function ReportsManagement() {
 
       if (result.status === "success") {
         setReports(prev => prev.filter((_, idx) => idx !== currentIndex));
-        alert("🗑️ Report eradicated from server system.");
+        showNotification("🗑️ Report eradicated from server system safely.", "success");
       } else {
-        alert(`❌ Delete operational fault: ${result.message}`);
+        showNotification(`❌ Delete operational fault: ${result.message}`, "error");
       }
     } catch (err) {
       console.error(err);
-      alert("❌ Connection timed out executing database deletion statement log loop.");
+      showNotification("❌ Connection timed out executing database deletion loop.", "error");
     }
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
+      
+      {/* 🟢 FLOATING TOAST NOTIFICATION BANNER RENDER LAYER */}
+      {toast.visible && (
+        <div className={`fixed top-5 right-5 z-50 flex items-center p-4 rounded-xl shadow-xl border max-w-md animate-slideIn transition-all duration-300 ${
+          toast.type === 'success' 
+            ? 'bg-emerald-50 border-emerald-200 text-emerald-800' 
+            : 'bg-rose-50 border-rose-200 text-rose-800'
+        }`}>
+          <div className="text-sm font-bold leading-tight flex-1">
+            {toast.message}
+          </div>
+          <button 
+            onClick={() => setToast(prev => ({ ...prev, visible: false }))} 
+            className="ml-4 text-xs font-black opacity-60 hover:opacity-100 cursor-pointer p-1"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       <h2 className="text-md font-black text-[#002B5B] uppercase tracking-wide border-b pb-3">
         📊 Real-Time Document Asset & Database Manager
       </h2>
@@ -192,7 +225,6 @@ function ReportsManagement() {
             reports.map((report, idx) => (
               <div key={report.id || `rep-${idx}`} className="bg-white p-4 rounded-xl border border-slate-200/80 flex justify-between items-center gap-4 shadow-sm hover:border-blue-200 transition-colors">
                 <div className="min-w-0 flex-1">
-                  {/* 🔗 ADDED: Clicking the title opens the uploaded file directly via its saved database link path */}
                   <a href={report.href ? `http://localhost/backend-project-ojt/public/${report.href}` : '#'} target="_blank" rel="noopener noreferrer" className="group block focus:outline-none">
                     <h4 className="text-xs font-bold text-slate-700 group-hover:text-blue-600 group-hover:underline truncate transition-colors">
                       🔗 {report.title}
