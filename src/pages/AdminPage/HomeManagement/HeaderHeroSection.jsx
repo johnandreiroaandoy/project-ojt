@@ -53,7 +53,7 @@ function HeaderHeroSection({ headerState, setHeaderState, onSave }) {
       <div className="flex gap-3 pt-2">
         <button 
           type="button"
-          onClick={() => onSave('home_header.json', headerState)} 
+          onClick={() => onSave('header_data.json', headerState)} 
           className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs uppercase py-3 px-6 rounded-xl transition-all shadow-sm cursor-pointer"
         >
           Save Header Changes
