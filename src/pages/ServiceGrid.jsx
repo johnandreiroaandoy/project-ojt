@@ -40,13 +40,13 @@ function ServiceGrid() {
         console.error('Error fetching external services directory:', error);
       })
       .finally(() => {
-        loading(false);
+        // 🚀 FIXED: Swapped 'loading(false)' runtime fault for proper state setter execution
+        setLoading(false);
       });
   }, [baseUrl]);
 
   /* ==========================================================
       COMPONENT SWITCHER
-      🎯 FIXED: Added .trim() to clean up hidden string whitespaces 
   ========================================================== */
   const renderSelectedComponent = () => {
     // Strips trailing spaces so "Certification of Payslip " accurately routes to "Certification of Payslip"
