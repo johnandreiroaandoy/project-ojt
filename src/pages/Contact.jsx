@@ -18,7 +18,7 @@ function Contact() {
   const [loading, setLoading] = useState(true);
 
   // VERIFICATION TRACKER STATES
-  const [verificationStatus, setVerificationStatus] = useState(null); // 'checking' | 'verified' | 'invalid' | null
+  const [verificationStatus, setVerificationStatus] = useState(null); // 'verified' | null
   const [userAvatar, setUserAvatar] = useState('');
 
   // 🟢 Grab the base URL dynamically from your centralized .env environment configurations
@@ -48,14 +48,6 @@ function Contact() {
         setLoading(false);
       });
   }, [baseUrl]);
-
-  // Clear verification status if they start typing a fresh email manually
-  const handleEmailChange = (e) => {
-    setEmail(e.target.value);
-    if (verificationStatus !== null) {
-      setVerificationStatus(null);
-    }
-  };
 
   // INTERCEPT AND PARSE GOOGLE'S SECURE RESPONSE TOKEN
   const handleCredentialResponse = (response) => {
@@ -113,44 +105,11 @@ function Contact() {
     return () => window.removeEventListener('load', initializeGoogleButton);
   }, [loading, contactStatic, verificationStatus]);
 
-  // AUTOMATIC BACKGROUND RUNNER FOR MANUAL TYPING (CORS SAFE VIA PHP BACKEND)
-  const autoVerifyEmail = async () => {
-    const targetEmail = email.trim();
-
-    // Skip verification if empty, poorly formatted, or already verified by Google authorization
-    if (!targetEmail || !/\S+@\S+\.\S+/.test(targetEmail) || userAvatar !== '') {
-      return;
-    }
-
-    setVerificationStatus('checking');
-
-    try {
-      const response = await fetch(`${baseUrl}/api/verify-email`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: targetEmail })
-      });
-      
-      const data = await response.json();
-      console.log("Backend Validation Engine Report:", data);
-
-      if (response.ok && data.status === 'success' && data.deliverability === 'DELIVERABLE') {
-        setVerificationStatus('verified');
-      } else {
-        setVerificationStatus('invalid');
-        toast.error('This email address does not exist or is inactive.', { id: 'email-err' });
-      }
-    } catch (err) {
-      console.error('Validation engine offline:', err);
-      setVerificationStatus(null);
-    }
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (verificationStatus === 'invalid') {
-      toast.error('Please update the email field with a registered, deliverable address.');
+    if (verificationStatus !== 'verified') {
+      toast.error('Please verify your identity via Google before submitting.');
       return;
     }
 
@@ -216,12 +175,12 @@ function Contact() {
 
   const formLabels = {
     name: "Full Name",
-    namePlaceholder: "Enter fullname...",
+    namePlaceholder: "Awaiting Google Authentication...",
     email: "Email Address",
-    emailPlaceholder: "Enter email link...",
+    emailPlaceholder: "Please Sign In to Google Account...",
     message: "Message",
     messagePlaceholder: "Type text details...",
-    btnDefault: "Submit",
+    btnDefault: "Submit Inquiry",
     btnSending: "Sending..."
   };
 
@@ -269,10 +228,10 @@ function Contact() {
           {userAvatar === '' ? (
             <div className="p-6 bg-white border border-dashed border-gray-200 rounded-2xl text-center space-y-4">
               <p className="text-xs font-black tracking-wider text-gray-400 uppercase">
-                🔒 Quick Identity Verification
+                🔒 Verification Required
               </p>
               <p className="text-xs text-gray-500 font-medium px-4">
-                Sync instantly with your Google Account to auto-fill the form, or simply fill in the details manually below.
+                You must authorize your Google account identity to open and fill out this contact inquiry profile.
               </p>
               <div id="googleButtonContainer" className="w-full pt-2"></div>
             </div>
@@ -288,7 +247,7 @@ function Contact() {
               <button 
                 type="button" 
                 onClick={() => { setVerificationStatus(null); setUserAvatar(''); setEmail(''); setName(''); }}
-                className="text-[10px] font-black text-red-500 hover:text-red-700 uppercase tracking-widest bg-white border border-red-100 py-1.5 px-3 rounded-lg shadow-sm transition-all"
+                className="text-[10px] font-black text-red-500 hover:text-red-700 uppercase tracking-widest bg-white border border-red-100 py-1.5 px-3 rounded-lg shadow-sm transition-all cursor-pointer"
               >
                 Disconnect
               </button>
@@ -304,37 +263,28 @@ function Contact() {
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
+              disabled={userAvatar === ''} // Blocks input until Google authentication is verified
               placeholder={formLabels.namePlaceholder}
-              className="w-full p-4 rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all font-medium text-sm"
+              className={`w-full p-4 rounded-xl border bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all font-medium text-sm ${
+                userAvatar === '' ? 'bg-gray-100/70 border-gray-200 text-gray-400 cursor-not-allowed select-none' : 'border-gray-200 text-gray-800'
+              }`}
               required
             />
           </div>
 
-          {/* Email Input with Real-time Verification Status Indicator Circle */}
+          {/* Locked Email Input Segment */}
           <div className="space-y-2 relative">
             <div className="flex justify-between items-center mr-2">
               <label className="text-[10px] font-black text-gray-400 uppercase ml-2">
                 {formLabels.email}
               </label>
               
-              {/* DYNAMIC STATUS INDICATOR DOT */}
+              {/* STATUS INDICATOR GLOW */}
               <div className="flex items-center gap-1.5 h-4">
-                {verificationStatus === 'checking' && (
-                  <>
-                    <span className="text-[9px] font-black text-blue-500 uppercase tracking-wider animate-pulse">Verifying...</span>
-                    <span className="h-2 w-2 rounded-full bg-blue-500 animate-ping"></span>
-                  </>
-                )}
                 {verificationStatus === 'verified' && (
                   <>
-                    <span className="text-[9px] font-black text-green-600 uppercase tracking-wider">Registered</span>
+                    <span className="text-[9px] font-black text-green-600 uppercase tracking-wider">Identity Linked</span>
                     <span className="h-2 w-2 rounded-full bg-green-500 shadow-[0_0_8px_#22c55e]"></span>
-                  </>
-                )}
-                {verificationStatus === 'invalid' && (
-                  <>
-                    <span className="text-[9px] font-black text-red-500 uppercase tracking-wider">Unregistered</span>
-                    <span className="h-2 w-2 rounded-full bg-red-500 shadow-[0_0_8px_#ef4444]"></span>
                   </>
                 )}
               </div>
@@ -343,15 +293,10 @@ function Contact() {
             <input
               type="email"
               value={email}
-              onChange={handleEmailChange}
-              onBlur={autoVerifyEmail} 
-              readOnly={userAvatar !== ''} // Locks field when signed into a Google Account
+              readOnly // Completely prevents typing manipulation
               placeholder={formLabels.emailPlaceholder}
-              className={`w-full p-4 rounded-xl border focus:outline-none focus:ring-2 transition-all font-medium text-sm ${
-                userAvatar !== '' 
-                  ? 'bg-gray-100 border-gray-300 text-gray-500 cursor-not-allowed select-none focus:ring-0' // Locked Visual UI
-                  : verificationStatus === 'invalid' ? 'bg-white border-red-400 focus:ring-red-500/10' :
-                    verificationStatus === 'verified' ? 'bg-white border-green-400 focus:ring-green-500/10' : 'bg-white border-gray-200 focus:ring-blue-500/10'
+              className={`w-full p-4 rounded-xl border focus:outline-none transition-all font-medium text-sm bg-gray-100/70 border-gray-200 text-gray-400 cursor-not-allowed select-none ${
+                verificationStatus === 'verified' ? 'bg-green-50/20 border-green-300 !text-green-800' : ''
               }`}
               required
             />
@@ -365,16 +310,19 @@ function Contact() {
             <textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}
+              disabled={userAvatar === ''} // Blocks field until Google session parameters are parsed
               placeholder={formLabels.messagePlaceholder}
               rows="4"
-              className="w-full p-4 rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all resize-none font-medium text-sm"
+              className={`w-full p-4 rounded-xl border bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all resize-none font-medium text-sm ${
+                userAvatar === '' ? 'bg-gray-100/70 border-gray-200 text-gray-400 cursor-not-allowed select-none' : 'border-gray-200 text-gray-800'
+              }`}
               required
             ></textarea>
           </div>
 
           {/* Submit Button */}
           <div className="pt-2">
-            <Button type="submit" disabled={isSubmitting || verificationStatus === 'invalid' || verificationStatus === 'checking'}>
+            <Button type="submit" disabled={isSubmitting || verificationStatus !== 'verified'}>
               {isSubmitting ? formLabels.btnSending : formLabels.btnDefault}
             </Button>
           </div>

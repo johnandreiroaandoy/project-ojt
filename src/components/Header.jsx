@@ -159,19 +159,7 @@ function Header() {
             </div>
           )}
 
-          {/* 🟢 NEW: DESKTOP LOGIN PORTAL LINK */}
-          <NavLink 
-            to="/login" 
-            className={({ isActive }) => `
-              hidden sm:inline-block font-black text-[11px] uppercase tracking-wider py-2.5 px-4 rounded-xl shadow-sm transition-all text-center whitespace-nowrap
-              ${isActive 
-                ? 'bg-yellow-600 text-white hover:bg-yellow-700' 
-                : 'bg-[#002B5B] text-white hover:bg-blue-700 hover:shadow-md'
-              }
-            `}
-          >
-            Login Portal
-          </NavLink>
+          
 
           {/* HAMBURGER BUTTON (MOBILE) */}
           <button 
@@ -203,13 +191,7 @@ function Header() {
           ))}
           
           {/* 🟢 NEW: MOBILE DROPDOWN LOGIN TRIGGER */}
-          <NavLink
-            to="/login"
-            onClick={() => setIsMenuOpen(false)}
-            className="w-full text-center bg-[#002B5B] text-white py-3 rounded-xl font-bold uppercase text-xs tracking-wider block mt-2"
-          >
-            🔑 Access Login Portal
-          </NavLink>
+          
         </div>
       </div>
 
