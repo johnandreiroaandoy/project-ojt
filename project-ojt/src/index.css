@@ -1,0 +1,18 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@import "tailwindcss";
+
+/* This removes the default margins so your header stretches to the edges */
+body {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Ensure the app takes up the full width */
+#root {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}

@@ -1,0 +1,167 @@
+import React, { useState, useEffect } from 'react';
+
+function PhotocopyOfDisbursement() {
+  /* ==========================================================
+      STATE VARIABLES
+      Tracks network delivery cycles and captures dynamic JSON payloads
+  ========================================================== */
+  const [claimsContent, setClaimsContent] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // 🟢 Grab the centralized environment base API URL
+  const baseUrl = import.meta.env.VITE_API_BASE_URL;
+
+  /* ==========================================================
+      RUNTIME ASYNCHRONOUS ENGINE
+      Fires instantly on component mount to pull parameters from XAMPP
+      (Includes dynamic unique parameter values to override aggressive caches)
+  ========================================================== */
+  useEffect(() => {
+    // 🟢 FIXED: Swapped static directory string for dynamic baseUrl integration
+    fetch(`${baseUrl}/data/photocopy_disbursement.json?v=${new Date().getTime()}`)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Server tracking asset missing. Status code: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then((data) => {
+        setClaimsContent(data);
+      })
+      .catch((err) => {
+        console.error("Failed to load decentralized disbursement matrix:", err);
+        setError(err.message);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, [baseUrl]);
+
+  /* ==========================================================
+      LATENCY & FAULT BOUNDARY CONDITIONS
+  ========================================================== */
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-16 text-gray-400 text-xs font-semibold animate-pulse">
+        🔄 Accessing server workspace and streaming transaction schemas...
+      </div>
+    );
+  }
+
+  if (error || !claimsContent) {
+    return (
+      <div className="p-4 bg-red-50 border border-red-200 text-red-800 rounded-xl text-xs font-medium">
+        ⚠️ Infrastructure Error: Unable to sync server criteria parameters from local target file. ({error || "Asset empty"})
+        <br />
+        <span className="text-[10px] font-normal text-red-600 block mt-2 font-mono">
+          Target file location: C:\xampp\htdocs\backend-project-ojt\public\data\photocopy_disbursement.json
+        </span>
+      </div>
+    );
+  }
+
+  // Destructure Citizen's Charter variables once runtime state holds data safely
+  const { serviceDetails, requirements, processingSteps } = claimsContent;
+
+  return (
+    <div className="font-sans text-gray-800 max-w-4xl mx-auto animate-fadeIn">
+      
+      {/* ==========================================================
+          SECTION HEADER (DYNAMIC REGION FROM CITIZEN'S CHARTER)
+      ========================================================== */}
+      <div className="border-b-2 border-blue-800 pb-4 mb-6">
+        <span className="text-3xl mb-2 block">{claimsContent.iconHeader}</span>
+        <h2 className="text-2xl font-black text-[#002B5B] uppercase leading-tight">
+          {serviceDetails.name}
+        </h2>
+        <p className="text-gray-600 text-sm mt-2 italic">
+          <strong>Purpose:</strong> {serviceDetails.purpose}
+        </p>
+      </div>
+
+      {/* ==========================================================
+          METADATA DIRECTORY MATRIX GRID
+      ========================================================== */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-xl border border-gray-200 text-xs mb-6">
+        <div className="flex flex-col gap-0.5">
+          <span className="text-gray-400 font-bold uppercase tracking-wider text-[10px]">Office / Division</span>
+          <span className="font-semibold text-gray-700">{serviceDetails.office}</span>
+        </div>
+        <div className="flex flex-col gap-0.5">
+          <span className="text-gray-400 font-bold uppercase tracking-wider text-[10px]">Classification</span>
+          <span className="font-semibold text-gray-700">{serviceDetails.classification}</span>
+        </div>
+        <div className="flex flex-col gap-0.5">
+          <span className="text-gray-400 font-bold uppercase tracking-wider text-[10px]">Type of Transaction</span>
+          <span className="font-semibold text-gray-700">{serviceDetails.transactionType}</span>
+        </div>
+        <div className="flex flex-col gap-0.5">
+          <span className="text-gray-400 font-bold uppercase tracking-wider text-[10px]">Who May Avail</span>
+          <span className="font-semibold text-gray-700">{serviceDetails.eligibleUsers}</span>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
+        
+        {/* ==========================================================
+            REQUIRED DOCUMENTATION CHECKLIST PANEL
+        ========================================================== */}
+        <div className="md:col-span-1 bg-blue-50/30 border border-blue-100 p-5 rounded-xl">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-blue-900 mb-3 flex items-center gap-2">
+            📋 Required Documents
+          </h3>
+          <ul className="space-y-3 text-xs text-gray-700">
+            {requirements.map((item, idx) => (
+              <li key={idx} className="leading-relaxed flex gap-2">
+                <span className="text-blue-600 select-none">•</span>
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* ==========================================================
+            KEY PROCESSING TIMELINE STEPS CARD TRACK
+        ========================================================== */}
+        <div className="md:col-span-2">
+          <div className="flex justify-between items-center mb-4 border-b border-gray-100 pb-2">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-blue-900 flex items-center gap-2">
+              ⚙️ Key Processing Steps
+            </h3>
+            <span className="bg-blue-100 text-[#002B5B] text-xs font-bold px-3 py-1 rounded-full">
+              Total: {serviceDetails.totalProcessingTime}
+            </span>
+          </div>
+
+          <div className="space-y-2.5">
+            {processingSteps.map((node) => (
+              <div 
+                key={node.step} 
+                className="flex items-center justify-between bg-white border border-gray-100 p-3.5 rounded-xl shadow-sm hover:border-blue-500 hover:shadow-md transition-all duration-200 group"
+              >
+                <div className="flex items-center gap-4">
+                  {/* Visual tracking numeric step indicator node */}
+                  <span className="w-6 h-6 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center text-xs font-black shrink-0 transition-colors duration-200 group-hover:bg-[#002B5B] group-hover:text-white">
+                    {node.step}
+                  </span>
+                  <span className="text-xs font-semibold text-gray-700 group-hover:text-gray-900 transition-colors">
+                    {node.action}
+                  </span>
+                </div>
+                {/* Specific timeline step duration badge */}
+                <span className="text-[11px] font-bold text-blue-600 shrink-0 bg-blue-50/50 px-2.5 py-1 rounded-md border border-blue-100 group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-600 transition-all">
+                  {node.duration}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  );
+}
+
+export default PhotocopyOfDisbursement;
