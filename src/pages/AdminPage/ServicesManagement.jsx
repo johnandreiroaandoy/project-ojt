@@ -7,6 +7,9 @@ import PhotocopyOfDisbursement from './ServicesEditor/PhotocopyOfDisbursement';
 import CertificationOnSalaryReceived from './ServicesEditor/CertificationOnSalaryReceived';
 import Elap from './ServicesEditor/Elap';
 
+// 🚀 NEW IMPORT: Reusable template editor handling any custom additions automatically
+import GenericServiceEditor from './ServicesEditor/GenericServiceEditor';
+
 function ServicesManagement({ state, setState, onSave }) {
   // Grab environmental URL context for inner dynamic fetch routines
   const baseUrl = import.meta.env.VITE_API_BASE_URL;
@@ -36,29 +39,44 @@ function ServicesManagement({ state, setState, onSave }) {
     });
   };
 
-  // ➕ Appends an entirely fresh functional card instance without wiping out the system rulesets
+  // ➕ Appends an entirely fresh functional card instance with active configuration by default
   const handleAddCard = () => {
     const newCard = {
       id: "srv_" + Date.now(),
-      title: "New Local Government Service Function Entry",
+      title: "New Strategic Service Capability Function",
       icon: "💼",
-      desc: ""
+      desc: "",
+      status: "active" // 🟢 Default status parameter initialized
     };
     setState(prev => ({ ...prev, cards: [...(prev?.cards || []), newCard] }));
   };
 
-  // 🗑️ Purges an entry out of the live cards array tracking pipeline
+  // 🔄 TOGGLE VISIBILITY STATUS (DISABLE / ENABLE CORE SERVICE)
+  const handleToggleStatus = (index) => {
+    setState(prev => {
+      const updatedCards = (prev?.cards || []).map((card, idx) => {
+        if (idx === index) {
+          const currentStatus = card.status || 'active';
+          return { ...card, status: currentStatus === 'active' ? 'disabled' : 'active' };
+        }
+        return card;
+      });
+      return { ...prev, cards: updatedCards };
+    });
+  };
+
+  // 🗑️ Purges custom added service entries completely
   const handleDeleteCard = (index) => {
-    if (!window.confirm("🚨 Delete this strategic service capability card from the live catalog mapping structure?")) return;
+    if (!window.confirm("🚨 Permanently wipe this service entry out of the system directory dataset?")) return;
     setState(prev => ({ ...prev, cards: (prev?.cards || []).filter((_, idx) => idx !== index) }));
   };
 
   // 🔀 DIRECT ROUTING TO SUB-EDITORS (No EditorHub Wrapper Needed)
   if (selectedServiceId) {
     const handleBack = () => setSelectedServiceId(null);
+    const cleanId = selectedServiceId.trim();
 
-    // Trim whitespace to protect router match stability
-    switch (selectedServiceId.trim()) {
+    switch (cleanId) {
       case "Certification of Payslip":
         return <CertificationOfPayslip onBack={handleBack} baseUrl={baseUrl} targetFile="certification_payslip.json" />;
       case "Certificate of Remittances":
@@ -68,14 +86,21 @@ function ServicesManagement({ state, setState, onSave }) {
       case "Certification on Salary Received":
         return <CertificationOnSalaryReceived onBack={handleBack} baseUrl={baseUrl} targetFile="certification_salary.json" />;
       case "elap":
+      case "Emergency Loan Assistance":
         return <Elap onBack={handleBack} baseUrl={baseUrl} targetFile="services_elap.json" />;
+      
+      // 🛠️ THE FIX: Pass the working onSave utility prop straight down into our generic editor blueprint
       default:
+        const safeJsonFilename = `services_${cleanId.toLowerCase().replace(/[^a-z0-9]/g, '_')}.json`;
+        
         return (
-          <div className="p-6 bg-amber-50 rounded-xl text-amber-800 text-xs font-bold text-center">
-            ⚠️ No dedicated custom file configuration mapped for key ID: "{selectedServiceId}".
-            <p className="text-[10px] text-slate-500 mt-1 font-normal">Ensure your Tracking ID exactly matches the router cases.</p>
-            <button onClick={handleBack} className="block mx-auto mt-2 text-blue-600 underline cursor-pointer">Go Back</button>
-          </div>
+          <GenericServiceEditor 
+            serviceId={cleanId}
+            onBack={handleBack} 
+            baseUrl={baseUrl} 
+            targetFile={safeJsonFilename} 
+            onSave={onSave} // 👈 REUSES YOUR DASHBOARD SAVE SYSTEM
+          />
         );
     }
   }
@@ -83,35 +108,49 @@ function ServicesManagement({ state, setState, onSave }) {
   return (
     <div className="space-y-8 animate-fadeIn">
       
-      {/* SECTION 1: CORE 5 SERVICES CLICKABLE REGISTRY MATRIX TARGET HUB */}
+      {/* SECTION 1: CORE SERVICES MATRIX LINKAGE TILES */}
       <div className="bg-[#002B5B]/5 p-5 rounded-2xl border border-[#002B5B]/10 space-y-4">
         <div>
           <span className="text-xs font-black text-[#002B5B] uppercase tracking-wider block">
-            🎯 Core 5 Services Registry Matrix
+            🎯 Core Services Registry Matrix
           </span>
           <p className="text-xs font-semibold text-slate-400 mt-0.5">
-            Click any active operational matrix card below to drop down into its isolated content data layer workspace.
+            Click any active matrix component to manage inner dynamic content data layer profiles. Grayed tiles represent disabled services.
           </p>
         </div>
         
-        {/* Clickable Card Pipeline */}
         <div className="grid grid-cols-1 sm:grid-cols-5 gap-3 pt-1">
           {cardsList.map((card, idx) => {
+            const isCardDisabled = card.status === 'disabled';
             const fallbackKey = card.id ? `matrix-node-${card.id}` : `matrix-node-idx-${idx}`;
+            
             return (
               <button
                 key={fallbackKey}
                 type="button"
                 onClick={() => setSelectedServiceId(card.id)}
-                className="p-4 bg-white hover:bg-slate-50 rounded-xl border border-slate-200 text-center transition-all hover:scale-[1.02] hover:shadow-sm cursor-pointer flex flex-col justify-between items-center group text-wrap w-full"
+                className={`p-4 rounded-xl border text-center transition-all hover:scale-[1.02] hover:shadow-sm cursor-pointer flex flex-col justify-between items-center group text-wrap w-full relative ${
+                  isCardDisabled 
+                    ? 'bg-gray-100/80 border-gray-200 text-gray-400 grayscale' 
+                    : 'bg-white border-slate-200 text-slate-700'
+                }`}
               >
+                {isCardDisabled && (
+                  <span className="absolute top-2 right-2 text-[7px] font-black tracking-widest uppercase bg-red-100 text-red-700 px-1 rounded">
+                    OFFLINE
+                  </span>
+                )}
                 <div>
                   <span className="text-xl block mb-2 group-hover:animate-bounce">{card.icon || '📄'}</span>
-                  <span className="text-[10px] font-black text-slate-700 uppercase tracking-tight line-clamp-3 block leading-tight=none">
+                  <span className="text-[10px] font-black uppercase tracking-tight line-clamp-3 block leading-tight">
                     {card.id || 'Unnamed ID'}
                   </span>
                 </div>
-                <span className="text-[8px] font-black text-blue-600 bg-blue-50 group-hover:bg-blue-600 group-hover:text-white transition-colors uppercase tracking-widest py-1 px-2 rounded mt-3 block">
+                <span className={`text-[8px] font-black uppercase tracking-widest py-1 px-2 rounded mt-3 block transition-colors ${
+                  isCardDisabled 
+                    ? 'bg-gray-200 text-gray-400 group-hover:bg-gray-300' 
+                    : 'bg-blue-50 text-blue-600 group-hover:bg-blue-600 group-hover:text-white'
+                }`}>
                   ⚙️ Enter Editor
                 </span>
               </button>
@@ -120,12 +159,12 @@ function ServicesManagement({ state, setState, onSave }) {
         </div>
       </div>
 
-      {/* SECTION 2: GLOBAL LAYOUT TEXT MANIFEST SETTINGS */}
+      {/* SECTION 2: GLOBAL META CONFIG */}
       <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-4">
         <span className="text-xs font-black text-[#002B5B] uppercase tracking-wider block">🌍 Dashboard Layout Meta Configuration</span>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Main Section Heading Title</label>
+            <label className="text-[10px] font-black text-slate-400 tracking-wider uppercase">Main Section Heading Title</label>
             <input 
               type="text" 
               value={header.title} 
@@ -134,7 +173,7 @@ function ServicesManagement({ state, setState, onSave }) {
             />
           </div>
           <div>
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Section Subtitle / Description</label>
+            <label className="text-[10px] font-black text-slate-400 tracking-wider uppercase">Section Subtitle / Description</label>
             <input 
               type="text" 
               value={header.subtitle} 
@@ -142,61 +181,59 @@ function ServicesManagement({ state, setState, onSave }) {
               className="w-full p-2.5 border rounded-lg mt-1 text-xs font-semibold text-slate-600 bg-white focus:ring-1 focus:ring-blue-500 outline-none" 
             />
           </div>
-          <div>
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Back Button Text Display</label>
-            <input 
-              type="text" 
-              value={controls.backButton} 
-              onChange={e => handleUpdateMeta('controls', 'backButton', e.target.value)} 
-              className="w-full p-2.5 border rounded-lg mt-1 text-xs font-semibold text-slate-600 bg-white focus:ring-1 focus:ring-blue-500 outline-none" 
-            />
-          </div>
-          <div>
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Card Action CTA text</label>
-            <input 
-              type="text" 
-              value={controls.actionButton} 
-              onChange={e => handleUpdateMeta('controls', 'actionButton', e.target.value)} 
-              className="w-full p-2.5 border rounded-lg mt-1 text-xs font-semibold text-slate-600 bg-white focus:ring-1 focus:ring-blue-500 outline-none" 
-            />
-          </div>
         </div>
       </div>
 
-      {/* SECTION 3: INDIVIDUAL DEEP CORE SERVICE CARDS MAPPER LOOP */}
+      {/* SECTION 3: EDIT AND TOGGLE CAPABILITY REGISTRY WORKSPACE */}
       <div className="space-y-4">
         <div className="border-b pb-3 flex justify-between items-center">
           <div>
-            <h2 className="text-md font-black text-[#002B5B] uppercase tracking-wide">📋 Active Office Service Cards ({cardsList.length})</h2>
-            <p className="text-xs font-semibold text-slate-400 mt-0.5">Edit or add cards which construct rows directly inside the public client interface.</p>
+            <h2 className="text-md font-black text-[#002B5B] uppercase tracking-wide">📋 Manage Active Registry Cards ({cardsList.length})</h2>
+            <p className="text-xs font-semibold text-slate-400 mt-0.5">Toggle live display status or instantly add completely new system services.</p>
           </div>
           <button 
             type="button" 
             onClick={handleAddCard}
             className="bg-emerald-600 hover:bg-emerald-700 text-white font-black text-[10px] uppercase tracking-wider py-2 px-3 rounded-md transition-colors cursor-pointer shadow-sm"
           >
-            ➕ Append Fresh Card
+            ➕ Add Core Service
           </button>
         </div>
 
         <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-2">
           {cardsList.map((card, index) => {
-            // 🚀 FIXED: Changed rowStableKey to point strictly to the stable loop index 
-            // This prevents losing text focus when editing dynamic input strings
             const rowStableKey = `card-block-row-idx-${index}`;
+            const isCardActive = (card.status || 'active') === 'active';
             
             return (
-              <div key={rowStableKey} className="p-4 bg-white border border-slate-200 rounded-xl space-y-3 relative group shadow-sm hover:border-slate-300 transition-colors">
+              <div key={rowStableKey} className={`p-4 border rounded-xl space-y-3 relative group shadow-sm transition-all ${
+                isCardActive ? 'bg-white border-slate-200' : 'bg-gray-50/50 border-gray-200 opacity-75'
+              }`}>
                 
-                <button
-                  type="button"
-                  onClick={() => handleDeleteCard(index)}
-                  className="absolute top-3 right-3 text-rose-500 hover:text-rose-700 bg-slate-50 hover:bg-rose-50 border rounded-lg py-1 px-2 text-[9px] font-black uppercase tracking-wider opacity-80 group-hover:opacity-100 transition-all cursor-pointer"
-                >
-                  ✕ Purge Entry
-                </button>
+                {/* RUNTIME OPTION PANEL CONTROLS */}
+                <div className="absolute top-3 right-3 flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleToggleStatus(index)}
+                    className={`py-1 px-2 text-[9px] font-black uppercase tracking-wider border rounded-lg transition-colors cursor-pointer ${
+                      isCardActive 
+                        ? 'bg-amber-50 text-amber-600 hover:bg-amber-100 border-amber-200' 
+                        : 'bg-green-50 text-green-700 hover:bg-green-100 border-green-200'
+                    }`}
+                  >
+                    {isCardActive ? "🛑 Disable" : "✅ Enable"}
+                  </button>
 
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteCard(index)}
+                    className="text-rose-500 hover:text-rose-700 bg-white border border-slate-100 rounded-lg py-1 px-2 text-[9px] font-black uppercase tracking-wider cursor-pointer shadow-sm"
+                  >
+                    ✕ Wipe
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-3 pt-4">
                   <div className="md:col-span-3">
                     <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Tracking Primary Identifier (ID)</label>
                     <input 
@@ -217,8 +254,8 @@ function ServicesManagement({ state, setState, onSave }) {
                     />
                   </div>
 
-                  <div className="md:col-span-2 pr-16 md:pr-0">
-                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Emoji Visual Glyph</label>
+                  <div className="md:col-span-2">
+                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Emoji Icon</label>
                     <input 
                       type="text" 
                       value={card.icon || '💼'} 
@@ -229,12 +266,12 @@ function ServicesManagement({ state, setState, onSave }) {
                 </div>
 
                 <div className="pt-1">
-                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Additional Context / Remarks Description (Optional)</label>
+                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Additional Context Remarks</label>
                   <input 
                     type="text" 
                     value={card.desc || ''} 
                     onChange={e => handleUpdateCardField(index, 'desc', e.target.value)}
-                    placeholder="Insert custom notes, processing timescales, or department exceptions..."
+                    placeholder="Insert custom notes, timescales, or exceptions..."
                     className="w-full p-2 border border-slate-100 rounded-lg mt-1 text-xs text-slate-500 bg-slate-50/50 focus:bg-white focus:ring-1 focus:ring-blue-500 outline-none"
                   />
                 </div>

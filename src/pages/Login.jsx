@@ -15,6 +15,11 @@ function Login() {
     
     // Check input against env variables
     if (credentials.email === secureEmail && credentials.password === securePassword) {
+      
+      // 🚀 FIXED: Inject authorization parameters into storage keys so ProtectedRoute allows entry
+      localStorage.setItem('isLoggedIn', 'true');
+      localStorage.setItem('token', 'authenticated_admin_session_token_proxy'); // Fallback mock token placeholder
+      
       toast.success("✨ Welcome back, Administrator!");
       navigate('/admin'); 
     } else {
@@ -30,6 +35,7 @@ function Login() {
           <label className="text-xs font-bold text-gray-400 uppercase">Email Address</label>
           <input 
             type="email" 
+            value={credentials.email}
             onChange={e => setCredentials({...credentials, email: e.target.value})}
             className="w-full p-3 border border-gray-200 rounded-xl outline-none mt-1 text-sm font-semibold" 
             required 
@@ -39,12 +45,13 @@ function Login() {
           <label className="text-xs font-bold text-gray-400 uppercase">Password Identification</label>
           <input 
             type="password" 
+            value={credentials.password}
             onChange={e => setCredentials({...credentials, password: e.target.value})}
             className="w-full p-3 border border-gray-200 rounded-xl outline-none mt-1 text-sm font-semibold" 
             required 
           />
         </div>
-        <button type="submit" className="w-full bg-[#002B5B] text-white py-3 font-bold rounded-xl text-xs uppercase tracking-widest hover:bg-blue-700 transition-all">
+        <button type="submit" className="w-full bg-[#002B5B] text-white py-3 font-bold rounded-xl text-xs uppercase tracking-widest hover:bg-blue-700 transition-all cursor-pointer">
           Authorize Session
         </button>
       </form>

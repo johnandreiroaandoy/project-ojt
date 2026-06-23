@@ -257,7 +257,8 @@ function AdminDashboard() {
           <ServicesManagement 
             state={serviceDirectoryState} 
             setState={setServiceDirectoryState} 
-            onSave={(fileName, data) => handlePersistLayout('services_directory.json', data)} 
+            /* ✅ FIXED: Forwards dynamic file strings directly without overriding them */
+            onSave={(fileName, data) => handlePersistLayout(fileName, data)} 
           />
         )}
         {activeTab === 'contact' && (
