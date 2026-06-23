@@ -9,13 +9,17 @@ function PhotocopyOfDisbursement() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // 🟢 Grab the centralized environment base API URL
+  const baseUrl = import.meta.env.VITE_API_BASE_URL;
+
   /* ==========================================================
       RUNTIME ASYNCHRONOUS ENGINE
       Fires instantly on component mount to pull parameters from XAMPP
       (Includes dynamic unique parameter values to override aggressive caches)
   ========================================================== */
   useEffect(() => {
-    fetch(`http://localhost/city-api/data/photocopy_disbursement.json?v=${new Date().getTime()}`)
+    // 🟢 FIXED: Swapped static directory string for dynamic baseUrl integration
+    fetch(`${baseUrl}/data/photocopy_disbursement.json?v=${new Date().getTime()}`)
       .then((response) => {
         if (!response.ok) {
           throw new Error(`Server tracking asset missing. Status code: ${response.status}`);
@@ -32,7 +36,7 @@ function PhotocopyOfDisbursement() {
       .finally(() => {
         setLoading(false);
       });
-  }, []);
+  }, [baseUrl]);
 
   /* ==========================================================
       LATENCY & FAULT BOUNDARY CONDITIONS
@@ -48,7 +52,11 @@ function PhotocopyOfDisbursement() {
   if (error || !claimsContent) {
     return (
       <div className="p-4 bg-red-50 border border-red-200 text-red-800 rounded-xl text-xs font-medium">
-        ⚠️ Infrastructure Error: Unable to sync server criteria parameters from XAMPP target file. ({error || "Asset empty"})
+        ⚠️ Infrastructure Error: Unable to sync server criteria parameters from local target file. ({error || "Asset empty"})
+        <br />
+        <span className="text-[10px] font-normal text-red-600 block mt-2 font-mono">
+          Target file location: C:\xampp\htdocs\backend-project-ojt\public\data\photocopy_disbursement.json
+        </span>
       </div>
     );
   }

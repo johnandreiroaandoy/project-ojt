@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 // Import BrowserRouter to enable page navigation without refreshing the browser
-import { BrowserRouter } from 'react-router-dom';
+import { BrowserRouter, useLocation } from 'react-router-dom';
 // Import shared components that appear on every page
 import Header from './components/Header.jsx';
 import Footer from './components/Footer.jsx';
@@ -21,7 +21,38 @@ import { GoogleReCaptchaProvider } from 'react-google-recaptcha-v3';
 import { Toaster } from 'react-hot-toast';
 
 /* ==========================================================
-   MAIN APPLICATION COMPONENT
+   INTERNAL ROUTING CONDITIONAL WRAPPER
+   
+   This handles hiding layout features dynamically based on 
+   URL patterns.
+========================================================== */
+function AppContent({ onOpenAdminLogin }) {
+  const location = useLocation();
+
+  // 🛡️ CONDITIONAL RENDER RULE: Hide the public layout elements if path starts with '/admin'
+  const isAdminPage = location.pathname.startsWith('/admin');
+
+  return (
+    <div className="min-h-screen flex flex-col bg-white">
+      
+      {/* 🟢 Render public header only if the user isn't in the administrative workspace */}
+      {!isAdminPage && <Header onOpenAdminLogin={onOpenAdminLogin} />}
+
+      {/* MAIN CONTENT AREA */}
+      <main className="flex-grow">
+        {/* Route controller mapping path endpoints to views */}
+        <Router />
+      </main>
+
+      {/* 🟢 Render public footer only if the user isn't in the administrative workspace */}
+      {!isAdminPage && <Footer />}
+
+    </div>
+  );
+}
+
+/* ==========================================================
+   MAIN ROOT APPLICATION COMPONENT
 ========================================================== */
 function App() {
   // State hook managing whether the admin login popup card is visible or hidden
@@ -32,23 +63,9 @@ function App() {
       reCaptchaKey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
     >
       <BrowserRouter>
-
-        {/* Main page layout container */}
-        <div className="min-h-screen flex flex-col bg-white">
-
-          {/* GLOBAL HEADER: Passed state function to handle button clicks */}
-          <Header onOpenAdminLogin={() => setIsAdminModalOpen(true)} />
-
-          {/* MAIN CONTENT AREA */}
-          <main className="flex-grow">
-            {/* Route controller */}
-            <Router />
-          </main>
-
-          {/* GLOBAL FOOTER */}
-          <Footer />
-
-        </div>
+        
+        {/* Invoke layout shell aware of navigation state */}
+        <AppContent onOpenAdminLogin={() => setIsAdminModalOpen(true)} />
 
         {/* ADMIN LOGIN MODAL POPUP (Controlled via React State) */}
         <AdminLoginModal 
@@ -56,7 +73,9 @@ function App() {
           onClose={() => setIsAdminModalOpen(false)} 
         />
 
-        {/* GLOBAL TOASTER POPUP NOTIFICATIONS */}
+        {/* ==================================================
+            GLOBAL TOASTER HOT NOTIFICATIONS
+        ================================================== */}
         <Toaster
           position="top-right"
           reverseOrder={false}

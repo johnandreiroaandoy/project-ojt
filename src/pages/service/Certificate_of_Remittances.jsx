@@ -9,13 +9,17 @@ function CertificateRemittances() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // 🟢 Grab the centralized environment base API URL
+  const baseUrl = import.meta.env.VITE_API_BASE_URL;
+
   /* ==========================================================
       RUNTIME ASYNCHRONOUS ENGINE
       Fires instantly when the tree node mounts to pull data from XAMPP
       (Includes dynamic cache-busting parameter to bypass caching)
   ========================================================== */
   useEffect(() => {
-    fetch(`http://localhost/city-api/data/certificate_remittances.json?v=${new Date().getTime()}`)
+    // 🟢 FIXED: Swapped static directory string for dynamic baseUrl integration
+    fetch(`${baseUrl}/data/certificate_remittances.json?v=${new Date().getTime()}`)
       .then((response) => {
         if (!response.ok) {
           throw new Error(`Server tracking asset missing. Status code: ${response.status}`);
@@ -32,7 +36,7 @@ function CertificateRemittances() {
       .finally(() => {
         setLoading(false);
       });
-  }, []);
+  }, [baseUrl]);
 
   /* ==========================================================
       LATENCY & GUARD STATUS CHECKPOINTS

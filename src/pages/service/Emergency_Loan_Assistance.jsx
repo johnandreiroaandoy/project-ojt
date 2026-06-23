@@ -9,13 +9,17 @@ function EmergencyLoanAssistance() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // 🟢 Grab the centralized environment base API URL
+  const baseUrl = import.meta.env.VITE_API_BASE_URL;
+
   /* ==========================================================
       RUNTIME ASYNCHRONOUS ENGINE
       Streams data directly from your XAMPP data folder on mount
       (Includes an appended timestamp parameter to bypass server/browser caching)
   ========================================================== */
   useEffect(() => {
-    fetch(`http://localhost/city-api/data/services_elap.json?v=${new Date().getTime()}`)
+    // 🟢 FIXED: Swapped static directory string for dynamic baseUrl integration
+    fetch(`${baseUrl}/data/services_elap.json?v=${new Date().getTime()}`)
       .then((response) => {
         if (!response.ok) {
           throw new Error(`Server resource missing. Status code: ${response.status}`);
@@ -32,7 +36,7 @@ function EmergencyLoanAssistance() {
       .finally(() => {
         setLoading(false);
       });
-  }, []);
+  }, [baseUrl]);
 
   /* ==========================================================
       LATENCY & FAILURE BOUNDARY CONDITIONS
@@ -48,7 +52,11 @@ function EmergencyLoanAssistance() {
   if (error || !elapContent) {
     return (
       <div className="p-4 bg-red-50 border border-red-200 text-red-800 rounded-xl text-xs font-medium">
-        ⚠️ Infrastructure Error: Unable to extract text parameters from XAMPP configuration target. ({error || "Payload empty"})
+        ⚠️ Infrastructure Error: Unable to extract text parameters from local server configuration target. ({error || "Payload empty"})
+        <br />
+        <span className="text-[10px] font-normal text-red-600 block mt-2 font-mono">
+          Target file location: C:\xampp\htdocs\backend-project-ojt\public\data\services_elap.json
+        </span>
       </div>
     );
   }

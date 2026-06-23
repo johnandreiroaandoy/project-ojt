@@ -9,13 +9,17 @@ function FinancialReporting() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // 🟢 Grab the centralized environment base API URL
+  const baseUrl = import.meta.env.VITE_API_BASE_URL;
+
   /* ==========================================================
       RUNTIME ASYNCHRONOUS ENGINE
       Streams text parameters right out of your local XAMPP asset pool
       (Includes cache-busting timestamp parameters)
   ========================================================== */
   useEffect(() => {
-    fetch(`http://localhost/city-api/data/certification_payslip.json?v=${new Date().getTime()}`)
+    // 🟢 FIXED: Swapped static directory string for dynamic baseUrl integration
+    fetch(`${baseUrl}/data/certification_payslip.json?v=${new Date().getTime()}`)
       .then((response) => {
         if (!response.ok) {
           throw new Error(`Server resource missing. Status code: ${response.status}`);
@@ -32,7 +36,7 @@ function FinancialReporting() {
       .finally(() => {
         setLoading(false);
       });
-  }, []);
+  }, [baseUrl]);
 
   /* ==========================================================
       LATENCY & FAILURE BOUNDARY CONDITIONS
@@ -48,7 +52,11 @@ function FinancialReporting() {
   if (error || !financialContent) {
     return (
       <div className="p-4 bg-red-50 border border-red-200 text-red-800 rounded-xl text-xs font-medium">
-        ⚠️ System Error: Unable to extract decentralized asset sheets from the Apache server environment. ({error || "No data payload returned"})
+        ⚠️ System Error: Unable to extract decentralized asset sheets from the local server environment. ({error || "No data payload returned"})
+        <br />
+        <span className="text-[10px] font-normal text-red-600 block mt-2 font-mono">
+          Target: C:\xampp\htdocs\backend-project-ojt\public\data\certification_payslip.json
+        </span>
       </div>
     );
   }
