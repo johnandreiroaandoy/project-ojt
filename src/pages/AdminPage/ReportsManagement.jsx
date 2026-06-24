@@ -75,6 +75,14 @@ function ReportsManagement() {
       return;
     }
 
+    // 🔒 NEW BLOCK: Enforce dynamic binary verification check before upload stream begins
+    const isVerifiedPdf = await verifyGenuinePdf(selectedFile);
+    if (!isVerifiedPdf) {
+      showNotification("❌ Upload Blocked: File signature verification mismatch. Falsified or corrupted PDF documents are prohibited.", "error");
+      setSelectedFile(null);
+      return;
+    }
+
     setIsUploading(true);
     
     const formData = new FormData();
