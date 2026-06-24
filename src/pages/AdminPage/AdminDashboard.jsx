@@ -7,7 +7,7 @@ import HomeManagement from './HomeManagement/HomeManagementContainer';
 import ServicesManagement from './ServicesManagement'; 
 import ContactManagement from './ContactManagement';   
 import ReportsManagement from './ReportsManagement';
-import AnalyticsManagement from './AnalyticsManagement'; // 🟢 IMPORTED THE NEW JSX FILE
+import AnalyticsManagement from './AnalyticsManagement'; // 🟢 Cleaned Component Imported
 
 // Stacked configuration forms pointing inside local subfolders
 import MandateConfig from './MandateManagement/MandateConfig';                  
@@ -19,13 +19,12 @@ function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('home');
   const [loading, setLoading] = useState(true);
 
-  // 📊 Analytics Tracker State Metrics
+  // 📊 Cleaned Analytics Tracker State Metrics
   const [visitorCount, setVisitorCount] = useState(0);
   const [analyticsRows, setAnalyticsRows] = useState([]); 
-  const [recentLogs, setRecentLogs] = useState([]);       // 🟢 Exact User Access Clocks
-  const [timelineData, setTimelineData] = useState([]);   // 🟢 Chart Coordinate Matrix Arrays
-  const [contactInquiriesCount, setContactInquiriesCount] = useState(0); // 🟢 Message Inquiries Counter Metric
-  const [inquiriesList, setInquiriesList] = useState([]); // 🟢 NEW STATE: Raw Recent Message Records Array Matrix
+  const [inquiryHours, setInquiryHours] = useState([]); // 🟢 NEW: Tracks the 24-Hour Inquiry Submission distribution matrix
+  const [contactInquiriesCount, setContactInquiriesCount] = useState(0); // Total Count Badge Metric
+  const [inquiriesList, setInquiriesList] = useState([]); // Raw Message Rows Matrix
 
   // States Matrix
   const [headerState, setHeaderState] = useState({ officialTagline: '', titleLine1: '', titleLine2: '', tagline: '' });
@@ -61,8 +60,8 @@ function AdminDashboard() {
       fetch(`${baseUrl}/data/contact_info.json${cacheBuster}`).then(res => res.json()).catch(() => ({})),
       fetch(`${baseUrl}/data/vision_mission.json${cacheBuster}`).then(res => res.json()).catch(() => ({})),
       fetch(`${baseUrl}/api/analytics/track-visit?pagename=admin_summary`).then(res => res.json()).catch(() => ({ total_visitors: 0 })),
-      fetch(`${baseUrl}/api/analytics/metrics`).then(res => res.json()).catch(() => ({ metrics: [], recentLogs: [], timeline: [], totalInquiries: 0 })),
-      fetch(`${baseUrl}/api/analytics/inquiries-list`).then(res => res.json()).catch(() => ({ inquiriesList: [] })) // 🟢 MATCH UNIFIED FALLBACK STRUCT
+      fetch(`${baseUrl}/api/analytics/metrics`).then(res => res.json()).catch(() => ({ metrics: [], inquiryHours: [], totalInquiries: 0 })),
+      fetch(`${baseUrl}/api/analytics/inquiries-list`).then(res => res.json()).catch(() => ({ inquiriesList: [] }))
     ])
     .then(([headerData, mandateData, servicesData, directoryData, contactData, visionMissionData, analyticsData, metricsData, inquiriesData]) => {
       setHeaderState({
@@ -135,15 +134,13 @@ function AdminDashboard() {
         setVisitorCount(analyticsData.total_visitors);
       }
 
-      // 🟢 PARSE ALL DUAL-TRACKING LOG ARRAYS + CONTACT INQUIRIES FROM PHP BACKEND INTERFACE
+      // 🟢 OPTIMIZED: Parse clean counter stats, live hourly inquiry blocks, and aggregate totals
       if (metricsData) {
         if (metricsData.metrics) setAnalyticsRows(metricsData.metrics);
-        if (metricsData.recentLogs) setRecentLogs(metricsData.recentLogs); // SET CLOCK HISTORY
-        if (metricsData.timeline) setTimelineData(metricsData.timeline);     // SET GRAPH MATRIX
-        if (metricsData.totalInquiries !== undefined) setContactInquiriesCount(metricsData.totalInquiries); // SET REALTIME CONTACT COUNT
+        if (metricsData.inquiryHours) setInquiryHours(metricsData.inquiryHours); // Save dynamic timeline coordinates
+        if (metricsData.totalInquiries !== undefined) setContactInquiriesCount(metricsData.totalInquiries);
       }
 
-      // ✅ FIX: Extract inquiriesList directly from payload to align with updated UserController.php
       if (inquiriesData && inquiriesData.inquiriesList) {
         setInquiriesList(inquiriesData.inquiriesList);
       }
@@ -324,12 +321,11 @@ function AdminDashboard() {
           <ReportsManagement state={reportForm} setState={setReportForm} onPublish={handlePublishReport} />
         )}
 
-        {/* 🟢 Forwarding inquiriesList parameter safely down to Analytics child component wrapper */}
+        {/* 🟢 Forwarding analytics counters and structured time matrices directly down to children hooks */}
         {activeTab === 'analytics' && (
           <AnalyticsManagement 
             analyticsRows={analyticsRows} 
-            recentLogs={recentLogs} 
-            timelineData={timelineData} 
+            inquiryHours={inquiryHours} // 🟢 Connected structural prop
             inquiriesList={inquiriesList}
           />
         )}
