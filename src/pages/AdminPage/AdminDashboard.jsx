@@ -7,6 +7,7 @@ import HomeManagement from './HomeManagement/HomeManagementContainer';
 import ServicesManagement from './ServicesManagement'; 
 import ContactManagement from './ContactManagement';   
 import ReportsManagement from './ReportsManagement';
+import AnalyticsManagement from './AnalyticsManagement'; // 🟢 IMPORTED THE NEW JSX FILE
 
 // Stacked configuration forms pointing inside local subfolders
 import MandateConfig from './MandateManagement/MandateConfig';                  
@@ -18,8 +19,13 @@ function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('home');
   const [loading, setLoading] = useState(true);
 
-  // 📊 Analytics Tracker State Metric
+  // 📊 Analytics Tracker State Metrics
   const [visitorCount, setVisitorCount] = useState(0);
+  const [analyticsRows, setAnalyticsRows] = useState([]); 
+  const [recentLogs, setRecentLogs] = useState([]);       // 🟢 Exact User Access Clocks
+  const [timelineData, setTimelineData] = useState([]);   // 🟢 Chart Coordinate Matrix Arrays
+  const [contactInquiriesCount, setContactInquiriesCount] = useState(0); // 🟢 Message Inquiries Counter Metric
+  const [inquiriesList, setInquiriesList] = useState([]); // 🟢 NEW STATE: Raw Recent Message Records Array Matrix
 
   // States Matrix
   const [headerState, setHeaderState] = useState({ officialTagline: '', titleLine1: '', titleLine2: '', tagline: '' });
@@ -54,10 +60,11 @@ function AdminDashboard() {
       fetch(`${baseUrl}/data/services_directory.json${cacheBuster}`).then(res => res.json()).catch(() => ({ header: {}, controls: {}, cards: [] })), 
       fetch(`${baseUrl}/data/contact_info.json${cacheBuster}`).then(res => res.json()).catch(() => ({})),
       fetch(`${baseUrl}/data/vision_mission.json${cacheBuster}`).then(res => res.json()).catch(() => ({})),
-      // 👥 Fetch system reaching visitor stats directly from custom MVC endpoint
-      fetch(`${baseUrl}/api/analytics/track-visit`).then(res => res.json()).catch(() => ({ total_visitors: 0 }))
+      fetch(`${baseUrl}/api/analytics/track-visit?pagename=admin_summary`).then(res => res.json()).catch(() => ({ total_visitors: 0 })),
+      fetch(`${baseUrl}/api/analytics/metrics`).then(res => res.json()).catch(() => ({ metrics: [], recentLogs: [], timeline: [], totalInquiries: 0 })),
+      fetch(`${baseUrl}/api/analytics/inquiries-list`).then(res => res.json()).catch(() => ({ inquiriesList: [] })) // 🟢 MATCH UNIFIED FALLBACK STRUCT
     ])
-    .then(([headerData, mandateData, servicesData, directoryData, contactData, visionMissionData, analyticsData]) => {
+    .then(([headerData, mandateData, servicesData, directoryData, contactData, visionMissionData, analyticsData, metricsData, inquiriesData]) => {
       setHeaderState({
         officialTagline: headerData.topBar?.officialTagline || '',
         titleLine1: headerData.hero?.titleLine1 || '',
@@ -124,9 +131,21 @@ function AdminDashboard() {
         emails: contactData.emails || []
       });
 
-      // Update analytics tracker value metric safely
       if (analyticsData && analyticsData.total_visitors) {
         setVisitorCount(analyticsData.total_visitors);
+      }
+
+      // 🟢 PARSE ALL DUAL-TRACKING LOG ARRAYS + CONTACT INQUIRIES FROM PHP BACKEND INTERFACE
+      if (metricsData) {
+        if (metricsData.metrics) setAnalyticsRows(metricsData.metrics);
+        if (metricsData.recentLogs) setRecentLogs(metricsData.recentLogs); // SET CLOCK HISTORY
+        if (metricsData.timeline) setTimelineData(metricsData.timeline);     // SET GRAPH MATRIX
+        if (metricsData.totalInquiries !== undefined) setContactInquiriesCount(metricsData.totalInquiries); // SET REALTIME CONTACT COUNT
+      }
+
+      // ✅ FIX: Extract inquiriesList directly from payload to align with updated UserController.php
+      if (inquiriesData && inquiriesData.inquiriesList) {
+        setInquiriesList(inquiriesData.inquiriesList);
       }
     })
     .catch(err => {
@@ -203,13 +222,24 @@ function AdminDashboard() {
           <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mt-1">Authorized Node Session: Verified OJT Developer Mode</p>
         </div>
 
-        {/* 📊 Real-Time Visitor Metrics Card and Session Control */}
+        {/* Real-Time Visitor Metrics Card and Session Control */}
         <div className="flex flex-wrap items-center gap-4 w-full lg:w-auto justify-start lg:justify-end">
+          
+          {/* Cumulative Traffic Badge */}
           <div className="bg-slate-50 border border-slate-200/80 rounded-2xl py-1.5 px-4 flex items-center gap-3 shadow-sm">
             <span className="text-base">👥</span>
             <div>
-              <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider m-0 leading-tight">Total Unique Traffic</p>
-              <p className="text-sm font-black text-[#002B5B] m-0 leading-tight">{visitorCount} Visitors</p>
+              <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider m-0 leading-tight">Total Cumulative Views</p>
+              <p className="text-sm font-black text-[#002B5B] m-0 leading-tight">{visitorCount} Hits</p>
+            </div>
+          </div>
+
+          {/* Real-Time Inquiries Received Tracking Badge Card Container */}
+          <div className="bg-slate-50 border border-slate-200/80 rounded-2xl py-1.5 px-4 flex items-center gap-3 shadow-sm">
+            <span className="text-base">📩</span>
+            <div>
+              <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider m-0 leading-tight">User Contact Messages</p>
+              <p className="text-sm font-black text-[#002B5B] m-0 leading-tight">{contactInquiriesCount} Inquiries</p>
             </div>
           </div>
           
@@ -226,7 +256,7 @@ function AdminDashboard() {
 
       {/* Navigation Sub-Menu Bar Tabs */}
       <div className="flex flex-wrap gap-2 mb-8 bg-slate-100 p-1.5 rounded-2xl border border-slate-200/60 max-w-max">
-        {['home', 'mandate', 'services', 'contact', 'reports'].map((tab) => (
+        {['home', 'mandate', 'services', 'contact', 'reports', 'analytics'].map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -241,6 +271,7 @@ function AdminDashboard() {
             {tab === 'services' && '💼 Services Directory Catalog'}
             {tab === 'contact' && '📞 Contact Parameters'}
             {tab === 'reports' && '📊 Data Reports Log'}
+            {tab === 'analytics' && '📈 Page Analytics'}
           </button>
         ))}
       </div>
@@ -274,11 +305,11 @@ function AdminDashboard() {
           </div>
         )}
 
+        {/* COMPONENT REDIRECT VIEWS */}
         {activeTab === 'services' && (
           <ServicesManagement 
             state={serviceDirectoryState} 
             setState={setServiceDirectoryState} 
-            /* ✅ FIXED: Forwards dynamic file strings directly without overriding them */
             onSave={(fileName, data) => handlePersistLayout(fileName, data)} 
           />
         )}
@@ -291,6 +322,16 @@ function AdminDashboard() {
         )}
         {activeTab === 'reports' && (
           <ReportsManagement state={reportForm} setState={setReportForm} onPublish={handlePublishReport} />
+        )}
+
+        {/* 🟢 Forwarding inquiriesList parameter safely down to Analytics child component wrapper */}
+        {activeTab === 'analytics' && (
+          <AnalyticsManagement 
+            analyticsRows={analyticsRows} 
+            recentLogs={recentLogs} 
+            timelineData={timelineData} 
+            inquiriesList={inquiriesList}
+          />
         )}
       </div>
     </div>

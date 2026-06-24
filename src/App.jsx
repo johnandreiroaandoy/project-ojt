@@ -34,28 +34,31 @@ function AppContent() {
      👥 BACKGROUND VISITOR TRACKING INITIALIZATION
   ========================================================== */
   useEffect(() => {
-    // Silently notify your custom MVC backend router path when any page mounts
-    fetch(`${baseUrl}/api/analytics/track-visit`)
+    // 🟢 UPDATED: Extract the clean page name (e.g., "/home", "/reports") or default to "root"
+    const currentPath = location.pathname === '/' ? 'root' : location.pathname;
+
+    // 🟢 UPDATED: Append the current page name as a URL parameter to your request string
+    fetch(`${baseUrl}/api/analytics/track-visit?pagename=${encodeURIComponent(currentPath)}`)
       .then(res => res.json())
       .then(result => {
         if (result.status === 'success') {
-          console.log(`📊 Site Analytics: Connected to tracker node. Lifetime reach: ${result.total_visitors}`);
+          console.log(`📊 Page Analytics: Counted visit for [${currentPath}]. Lifetime hits: ${result.total_visitors}`);
         }
       })
       .catch(err => {
         // Log locally without breaking the user's interface experience if backend drops
         console.warn("Analytics pipeline temporarily unreachable:", err);
       });
-  }, [baseUrl]);
+  }, [baseUrl, location.pathname]); // 🟢 UPDATED: Adding location.pathname triggers this tracking hook every time the route changes!
 
-  // 🛡️ CONDITIONAL RENDER RULE: Hide the public layout elements if path starts with '/admin'
-  const isAdminPage = location.pathname.startsWith('/admin');
+  // 🛡️ CONDITIONAL RENDER RULE: Hide the public layout elements if path starts with '/admin' OR matches '/login'
+  const isAdminOrLoginPage = location.pathname.startsWith('/admin') || location.pathname === '/login';
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
       
-      {/* 🟢 Render public header only if the user isn't in the administrative workspace */}
-      {!isAdminPage && <Header />}
+      {/* 🟢 Render public header only if the user isn't in the administrative or login workspace */}
+      {!isAdminOrLoginPage && <Header />}
 
       {/* MAIN CONTENT AREA */}
       <main className="flex-grow">
@@ -63,8 +66,8 @@ function AppContent() {
         <Router />
       </main>
 
-      {/* 🟢 Render public footer only if the user isn't in the administrative workspace */}
-      {!isAdminPage && <Footer />}
+      {/* 🟢 Render public footer only if the user isn't in the administrative or login workspace */}
+      {!isAdminOrLoginPage && <Footer />}
 
     </div>
   );

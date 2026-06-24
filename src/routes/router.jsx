@@ -2,7 +2,7 @@ import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 
 /* ==========================================================
-    IMPORT PAGE COMPONENTS
+   IMPORT PAGE COMPONENTS
 ========================================================== */
 import Home from '../pages/Home.jsx';
 import ServiceGrid from '../pages/ServiceGrid.jsx';
@@ -12,7 +12,8 @@ import Contact from '../pages/Contact.jsx';
 import Login from '../pages/Login.jsx';
 import AdminDashboard from '../pages/AdminPage/AdminDashboard.jsx';
 
-// 🔐 ROUTE GUARD: Verified Sibling Folder Import
+// 🔐 ROUTE GUARD: Ensure this path correctly points to your ProtectedRoute file
+// (e.g., if it's in src/components/, change to '../components/ProtectedRoute.jsx')
 import ProtectedRoute from './ProtectedRoute.jsx';
 
 function Router() {
