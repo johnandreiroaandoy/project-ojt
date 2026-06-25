@@ -43,7 +43,13 @@ function ReportsManagement() {
   const fetchActiveReports = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/reports`);
+      const token = localStorage.getItem('adminToken');
+      const res = await fetch(`${API_BASE_URL}/reports`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       if (!res.ok) throw new Error(`HTTP Error Status: ${res.status}`);
       const json = await res.json();
       
@@ -67,7 +73,7 @@ function ReportsManagement() {
     }
   };
 
-  // 🔒 NEW: Async validation utility to inspect raw binary Magic Bytes header signatures
+  // 🔒 Async validation utility to inspect raw binary Magic Bytes header signatures
   const verifyGenuinePdf = (file) => {
     return new Promise((resolve) => {
       if (file.type !== 'application/pdf') {
@@ -78,18 +84,15 @@ function ReportsManagement() {
       reader.onloadend = (e) => {
         if (!e.target || !e.target.result) return resolve(false);
         
-        // Grab the first 4 bytes of the binary chunk array array
         const arr = new Uint8Array(e.target.result).subarray(0, 4);
         let headerSignature = "";
         for (let i = 0; i < arr.length; i++) {
           headerSignature += String.fromCharCode(arr[i]);
         }
         
-        // A genuine PDF must start precisely with "%PDF"
         resolve(headerSignature === "%PDF");
       };
 
-      // Read only the tiny header to save local RAM structures
       const dynamicChunkBlob = file.slice(0, 4);
       reader.readAsArrayBuffer(dynamicChunkBlob);
     });
@@ -103,7 +106,6 @@ function ReportsManagement() {
       return;
     }
 
-    // 🔒 NEW BLOCK: Enforce dynamic binary verification check before upload stream begins
     const isVerifiedPdf = await verifyGenuinePdf(selectedFile);
     if (!isVerifiedPdf) {
       showNotification("❌ Upload Blocked: File signature verification mismatch. Falsified or corrupted PDF documents are prohibited.", "error");
@@ -120,8 +122,14 @@ function ReportsManagement() {
     formData.append('file', selectedFile); 
 
     try {
+      // 🔒 SECURITY UPDATE: Pass administrative token inside upload handshakes
+      const token = localStorage.getItem('adminToken');
       const res = await fetch(`${API_BASE_URL}/reports/upload`, {
         method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+          // Note: Leave Content-Type blank so the browser binds the multi-part boundary string correctly
+        },
         body: formData,
       });
       
@@ -146,7 +154,7 @@ function ReportsManagement() {
       }
     } catch (err) {
       console.error(err);
-      showNotification("❌ Communication loop broken. Confirm your local XAMPP settings and CORS rules.", "error");
+      showNotification("❌ Communication loop broken. Confirm your token credentials or CORS permissions.", "error");
     } finally {
       setIsUploading(false);
     }
@@ -161,9 +169,15 @@ function ReportsManagement() {
     if (!window.confirm("🚨 Delete this item entirely from the live database and file repository disk?")) return;
 
     try {
+      // 🔒 SECURITY UPDATE: Retrieve authorization token from your node session local buffer
+      const token = localStorage.getItem('adminToken');
+
       const res = await fetch(`${API_BASE_URL}/reports/delete`, {
         method: 'DELETE', 
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` // Protects structural data state changes
+        },
         body: JSON.stringify({ id: reportId })
       });
       
@@ -178,7 +192,7 @@ function ReportsManagement() {
       }
     } catch (err) {
       console.error(err);
-      showNotification("❌ Connection timed out executing database deletion loop.", "error");
+      showNotification("❌ Access denied or network timeout executing database deletion loop.", "error");
     }
   };
 
@@ -239,7 +253,6 @@ function ReportsManagement() {
           </div>
 
           <div className="border-2 border-dashed border-slate-200 bg-white rounded-xl p-4 flex flex-col items-center justify-center text-center">
-            {/* ✅ UPDATED: The input selector filter limits explicitly down to true PDF MIME targets */}
             <input 
               type="file" 
               accept="application/pdf" 
