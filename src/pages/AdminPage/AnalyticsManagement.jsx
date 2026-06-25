@@ -1,18 +1,72 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 function AnalyticsManagement({ analyticsRows = [], inquiryHours = [], inquiriesList = [] }) {
-  
-  // Convert standard hour indexes (0-23) into clean readable timeline labels (e.g., "3 PM")
-  const formattedInquiryData = inquiryHours.map(item => {
-    const hour = item.hour_number;
-    const ampm = hour >= 12 ? 'PM' : 'AM';
-    const displayHour = hour % 12 === 0 ? 12 : hour % 12;
-    return {
-      ...item,
-      timeLabel: `${displayHour} ${ampm}`
-    };
-  });
+  const [timeframe, setTimeframe] = useState('day');
+
+  // 🟢 PARSING ENGINE: Processes actual database entries from `inquiriesList`
+  const getProcessedTimelineData = () => {
+    // 1. DAY VIEW: Uses the exact hourly tracking array from your backend database query
+    if (timeframe === 'day') {
+      return inquiryHours.map(item => {
+        const hour = item.hour_number;
+        const ampm = hour >= 12 ? 'PM' : 'AM';
+        const displayHour = hour % 12 === 0 ? 12 : hour % 12;
+        return {
+          label: `${displayHour} ${ampm}`,
+          count: Number(item.message_count || 0)
+        };
+      });
+    }
+
+    // 2. WEEK VIEW: Groups actual DB items by their real day of the week
+    if (timeframe === 'week') {
+      const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      const counts = { Sun: 0, Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0 };
+      
+      inquiriesList.forEach(inquiry => {
+        if (!inquiry.created_at) return;
+        const dayName = daysOfWeek[new Date(inquiry.created_at).getDay()];
+        if (counts[dayName] !== undefined) counts[dayName]++;
+      });
+
+      return daysOfWeek.map(day => ({ label: day, count: counts[day] }));
+    }
+
+    // 3. MONTH VIEW: Groups actual DB items by calendar weeks (1st to 31st of the month)
+    if (timeframe === 'month') {
+      const counts = { 'Week 1 (1-7)': 0, 'Week 2 (8-14)': 0, 'Week 3 (15-21)': 0, 'Week 4 (22+)': 0 };
+      
+      inquiriesList.forEach(inquiry => {
+        if (!inquiry.created_at) return;
+        const date = new Date(inquiry.created_at).getDate();
+        if (date <= 7) counts['Week 1 (1-7)']++;
+        else if (date <= 14) counts['Week 2 (8-14)']++;
+        else if (date <= 21) counts['Week 3 (15-21)']++;
+        else counts['Week 4 (22+)']++;
+      });
+
+      return Object.keys(counts).map(key => ({ label: key, count: counts[key] }));
+    }
+
+    // 4. YEAR VIEW: Groups actual DB items by calendar months (Jan-Dec)
+    if (timeframe === 'year') {
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const counts = Array(12).fill(0);
+
+      inquiriesList.forEach(inquiry => {
+        if (!inquiry.created_at) return;
+        const monthIndex = new Date(inquiry.created_at).getMonth();
+        counts[monthIndex]++;
+      });
+
+      return months.map((month, idx) => ({ label: month, count: counts[idx] }));
+    }
+
+    return [];
+  };
+
+  const activeChartData = getProcessedTimelineData();
 
   return (
     <div className="space-y-12">
@@ -61,15 +115,40 @@ function AnalyticsManagement({ analyticsRows = [], inquiryHours = [], inquiriesL
         </div>
 
         {/* CHART B: INQUIRY SUBMISSION TIMING PEAKS */}
-        <div className="bg-slate-50/60 p-5 border border-slate-200/80 rounded-2xl">
-          <div className="mb-4">
-            <h4 className="text-sm font-black text-[#002B5B] uppercase tracking-tight m-0">
-              Inquiry Peak Response Hours
-            </h4>
-            <p className="text-[10px] text-slate-400 font-semibold uppercase mt-1">
-              Identifies exactly what hours users submit message items
-            </p>
+        <div className="bg-slate-50/60 p-5 border border-slate-200/80 rounded-2xl flex flex-col justify-between">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4">
+            <div>
+              <h4 className="text-sm font-black text-[#002B5B] uppercase tracking-tight m-0">
+                Inquiry Submission Volumetrics
+              </h4>
+              <p className="text-[10px] text-slate-400 font-semibold uppercase mt-1">
+                Timeline macro trend analysis interface
+              </p>
+            </div>
+
+            {/* Segmented Timeframe Toggle Buttons */}
+            <div className="inline-flex bg-slate-200/70 p-1 rounded-xl border border-slate-300/40">
+              {[
+                { id: 'day', label: 'Day' },
+                { id: 'week', label: 'Week' },
+                { id: 'month', label: 'Month' },
+                { id: 'year', label: 'Year' }
+              ].map((btn) => (
+                <button
+                  key={btn.id}
+                  onClick={() => setTimeframe(btn.id)}
+                  className={`py-1 px-3 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all cursor-pointer ${
+                    timeframe === btn.id
+                      ? 'bg-[#002B5B] text-white shadow-sm'
+                      : 'text-slate-500 hover:text-slate-800'
+                  }`}
+                >
+                  {btn.label}
+                </button>
+              ))}
+            </div>
           </div>
+
           <div className="h-60 w-full">
             {inquiriesList.length === 0 ? (
               <div className="h-full flex items-center justify-center text-xs font-bold text-slate-400 uppercase tracking-widest">
@@ -77,10 +156,10 @@ function AnalyticsManagement({ analyticsRows = [], inquiryHours = [], inquiriesL
               </div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={formattedInquiryData} margin={{ top: 10, right: 10, left: -20, bottom: 5 }}>
+                <LineChart data={activeChartData} margin={{ top: 10, right: 10, left: -20, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
                   <XAxis 
-                    dataKey="timeLabel" 
+                    dataKey="label" 
                     stroke="#94A3B8" 
                     style={{ fontSize: '9px', fontWeight: 'bold' }} 
                   />
@@ -94,8 +173,8 @@ function AnalyticsManagement({ analyticsRows = [], inquiryHours = [], inquiriesL
                   />
                   <Line 
                     type="monotone" 
-                    dataKey="message_count" 
-                    name="Inquiries Sent" 
+                    dataKey="count" 
+                    name="Inquiries Received" 
                     stroke="#10B981" 
                     strokeWidth={3} 
                     dot={{ r: 3, strokeWidth: 1, fill: '#10B981' }} 
@@ -109,7 +188,8 @@ function AnalyticsManagement({ analyticsRows = [], inquiryHours = [], inquiriesL
 
       </div>
 
-      {/* 📊 SECTION 2: MASTER COUNTER ACCUMULATION TABLE */}
+      {/* --- SECTION 2 & 3 REMAIN EXACTLY THE SAME AS YOUR LOGGED ENTRIES --- */}
+      {/* (Table markup continues cleanly below...) */}
       <div>
         <div className="mb-4">
           <h3 className="text-lg font-black text-[#002B5B] uppercase tracking-tight m-0">
@@ -119,7 +199,6 @@ function AnalyticsManagement({ analyticsRows = [], inquiryHours = [], inquiriesL
             Live metrics parsed directly from rows of website_visitors registry
           </p>
         </div>
-
         <div className="overflow-x-auto border border-slate-200 rounded-2xl shadow-sm bg-white">
           <table className="min-w-full divide-y divide-slate-200 text-left text-sm text-slate-600">
             <thead className="bg-slate-50 text-slate-400 font-bold uppercase text-[10px] tracking-wider border-b border-slate-200">
@@ -156,7 +235,6 @@ function AnalyticsManagement({ analyticsRows = [], inquiryHours = [], inquiriesL
         </div>
       </div>
 
-      {/* 📩 SECTION 3: UNIFIED USER CONTACT INBOX MESSAGES MATRIX */}
       <div className="pt-2">
         <div className="mb-4">
           <h3 className="text-lg font-black text-[#002B5B] uppercase tracking-tight m-0">
@@ -166,7 +244,6 @@ function AnalyticsManagement({ analyticsRows = [], inquiryHours = [], inquiriesL
             Incoming direct inquiries and user messages parsed dynamically from the contacts database table
           </p>
         </div>
-
         <div className="overflow-x-auto border border-slate-200 rounded-2xl shadow-sm bg-white">
           <table className="min-w-full divide-y divide-slate-200 text-left text-sm text-slate-600">
             <thead className="bg-slate-50 text-slate-400 font-bold uppercase text-[10px] tracking-wider border-b border-slate-200">

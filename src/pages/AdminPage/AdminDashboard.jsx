@@ -7,7 +7,7 @@ import HomeManagement from './HomeManagement/HomeManagementContainer';
 import ServicesManagement from './ServicesManagement'; 
 import ContactManagement from './ContactManagement';   
 import ReportsManagement from './ReportsManagement';
-import AnalyticsManagement from './AnalyticsManagement'; // 🟢 Cleaned Component Imported
+import AnalyticsManagement from './AnalyticsManagement'; 
 
 // Stacked configuration forms pointing inside local subfolders
 import MandateConfig from './MandateManagement/MandateConfig';                  
@@ -22,35 +22,47 @@ function AdminDashboard() {
   // 📊 Cleaned Analytics Tracker State Metrics
   const [visitorCount, setVisitorCount] = useState(0);
   const [analyticsRows, setAnalyticsRows] = useState([]); 
-  const [inquiryHours, setInquiryHours] = useState([]); // 🟢 NEW: Tracks the 24-Hour Inquiry Submission distribution matrix
-  const [contactInquiriesCount, setContactInquiriesCount] = useState(0); // Total Count Badge Metric
-  const [inquiriesList, setInquiriesList] = useState([]); // Raw Message Rows Matrix
+  const [inquiryHours, setInquiryHours] = useState([]); 
+  const [contactInquiriesCount, setContactInquiriesCount] = useState(0); 
+  const [inquiriesList, setInquiriesList] = useState([]); 
 
   // States Matrix
   const [headerState, setHeaderState] = useState({ officialTagline: '', titleLine1: '', titleLine2: '', tagline: '' });
-  
   const [mandateState, setMandateState] = useState({ 
-    headerTitle: '', 
-    headerSubtitle: '', 
-    legalBasis: '', 
+    headerTitle: '', headerSubtitle: '', legalBasis: '', 
     mandate: { title: '', quote: '', citation: '' }, 
     powers: { title: '', list: [] } 
   });
-
   const [visionMissionState, setVisionMissionState] = useState({
     vision: { title: '', statement: '' },
     mission: { title: '', statement: '' }
   });
-
   const [servicesState, setServicesState] = useState({ miniTitle: '', sectionTitle: '', paragraphCopy: '', cards: [] });
   const [serviceDirectoryState, setServiceDirectoryState] = useState({ header: { title: '', subtitle: '' }, controls: { backButton: '', actionButton: '' }, cards: [] }); 
   const [contactState, setContactState] = useState({ heading: '', roomNumber: '', floor: '', building: '', street: '', city: '', phoneLabel: '', phoneNumber: '', localLines: '', emailLabel: '', emails: [] });
-  const [reportForm, setReportForm] = useState({ title: '', category: '', downloadUrl: '' });
+  const [reportForm, setReportForm] = useState({ title: '', year: '', month: '', file: null });
 
-  // Sync all buffers simultaneously from local Apache server disk + Fetch live visitor count
+  // 🔒 SECURITY CHECK: Helper function to pull token and build authenticated headers
+  const getAuthHeaders = (extraHeaders = {}) => {
+    const token = localStorage.getItem('adminToken');
+    if (!token) {
+      toast.error("🛑 Unauthenticated access attempt. Redirecting...");
+      navigate('/');
+      return null;
+    }
+    return {
+      'Authorization': `Bearer ${token}`,
+      ...extraHeaders
+    };
+  };
+
+  // Sync all buffers simultaneously from local server files + Fetch analytics
   useEffect(() => {
     const cacheBuster = `?v=${new Date().getTime()}`;
     setLoading(true);
+
+    const headers = getAuthHeaders();
+    if (!headers) return;
 
     Promise.all([
       fetch(`${baseUrl}/data/header_data.json${cacheBuster}`).then(res => res.json()).catch(() => ({ topBar: {}, hero: {} })),
@@ -60,8 +72,8 @@ function AdminDashboard() {
       fetch(`${baseUrl}/data/contact_info.json${cacheBuster}`).then(res => res.json()).catch(() => ({})),
       fetch(`${baseUrl}/data/vision_mission.json${cacheBuster}`).then(res => res.json()).catch(() => ({})),
       fetch(`${baseUrl}/api/analytics/track-visit?pagename=admin_summary`).then(res => res.json()).catch(() => ({ total_visitors: 0 })),
-      fetch(`${baseUrl}/api/analytics/metrics`).then(res => res.json()).catch(() => ({ metrics: [], inquiryHours: [], totalInquiries: 0 })),
-      fetch(`${baseUrl}/api/analytics/inquiries-list`).then(res => res.json()).catch(() => ({ inquiriesList: [] }))
+      fetch(`${baseUrl}/api/analytics/metrics`, { headers }).then(res => res.json()).catch(() => ({ metrics: [], inquiryHours: [], totalInquiries: 0 })),
+      fetch(`${baseUrl}/api/analytics/inquiries-list`, { headers }).then(res => res.json()).catch(() => ({ inquiriesList: [] }))
     ])
     .then(([headerData, mandateData, servicesData, directoryData, contactData, visionMissionData, analyticsData, metricsData, inquiriesData]) => {
       setHeaderState({
@@ -87,14 +99,8 @@ function AdminDashboard() {
       });
 
       setVisionMissionState({
-        vision: {
-          title: visionMissionData.vision?.title || '',
-          statement: visionMissionData.vision?.statement || ''
-        },
-        mission: {
-          title: visionMissionData.mission?.title || '',
-          statement: visionMissionData.mission?.statement || ''
-        }
+        vision: { title: visionMissionData.vision?.title || '', statement: visionMissionData.vision?.statement || '' },
+        mission: { title: visionMissionData.mission?.title || '', statement: visionMissionData.mission?.statement || '' }
       });
 
       setServicesState({
@@ -105,14 +111,8 @@ function AdminDashboard() {
       });
       
       setServiceDirectoryState({
-        header: {
-          title: directoryData.header?.title || '',
-          subtitle: directoryData.header?.subtitle || ''
-        },
-        controls: {
-          backButton: directoryData.controls?.backButton || '',
-          actionButton: directoryData.controls?.actionButton || ''
-        },
+        header: { title: directoryData.header?.title || '', subtitle: directoryData.header?.subtitle || '' },
+        controls: { backButton: directoryData.controls?.backButton || '', actionButton: directoryData.controls?.actionButton || '' },
         cards: directoryData.cards || []
       }); 
       
@@ -134,10 +134,9 @@ function AdminDashboard() {
         setVisitorCount(analyticsData.total_visitors);
       }
 
-      // 🟢 OPTIMIZED: Parse clean counter stats, live hourly inquiry blocks, and aggregate totals
       if (metricsData) {
         if (metricsData.metrics) setAnalyticsRows(metricsData.metrics);
-        if (metricsData.inquiryHours) setInquiryHours(metricsData.inquiryHours); // Save dynamic timeline coordinates
+        if (metricsData.inquiryHours) setInquiryHours(metricsData.inquiryHours); 
         if (metricsData.totalInquiries !== undefined) setContactInquiriesCount(metricsData.totalInquiries);
       }
 
@@ -152,12 +151,16 @@ function AdminDashboard() {
     .finally(() => setLoading(false));
   }, [baseUrl]);
 
+  // 🔒 SECURED: Save Layout Changes via Config File Controller
   const handlePersistLayout = async (targetFileName, payloadData) => {
+    const authHeaders = getAuthHeaders({ 'Content-Type': 'application/json' });
+    if (!authHeaders) return;
+
     const loadingToast = toast.loading("⏳ Rewriting file configurations on Apache server...");
     try {
       const response = await fetch(`${baseUrl}/api/content/save-config`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders,
         body: JSON.stringify({ targetFile: targetFileName, data: payloadData })
       });
       const result = await response.json();
@@ -171,26 +174,43 @@ function AdminDashboard() {
     }
   };
 
+  // 🔒 SECURED: Modified to use real FormData targeting the active ReportController.php
   const handlePublishReport = async (e) => {
-    e.preventDefault();
-    if (!reportForm.title || !reportForm.category) {
-      return toast.error("Please provide necessary metadata descriptors.");
+    if (e && e.preventDefault) e.preventDefault();
+    
+    if (!reportForm.title || !reportForm.file) {
+      return toast.error("Please provide both a description title and a valid PDF file.");
     }
-    const reportToast = toast.loading("Injecting ledger configuration entries into database structure...");
+
+    // Do NOT declare 'Content-Type' when appending native browser FormData files
+    const authHeaders = getAuthHeaders();
+    if (!authHeaders) return;
+
+    const reportToast = toast.loading("Uploading PDF file and logging ledger database records...");
+    
     try {
-      const response = await fetch(`${baseUrl}/api/reports/create`, {
+      const formData = new FormData();
+      formData.append('title', reportForm.title);
+      formData.append('year', reportForm.year || new Date().getFullYear());
+      formData.append('month', reportForm.month || '1');
+      formData.append('file', reportForm.file);
+
+      const response = await fetch(`${baseUrl}/api/reports/upload`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(reportForm)
+        headers: authHeaders,
+        body: formData
       });
-      if (response.ok) {
+      
+      const result = await response.json();
+
+      if (result.status === 'success' || response.ok) {
         toast.success("📊 Transparencies cataloged safely inside the ledger matrix!", { id: reportToast });
-        setReportForm({ title: '', category: '', downloadUrl: '' });
+        setReportForm({ title: '', year: '', month: '', file: null });
       } else {
-        throw new Error("Database interface dropped serialization transaction step.");
+        throw new Error(result.message || "Database interface dropped transaction execution.");
       }
     } catch (err) {
-      toast.error("✗ Database Exception occurred.", { id: reportToast });
+      toast.error(err.message || "✗ File upload exception occurred.", { id: reportToast });
     }
   };
 
@@ -211,7 +231,6 @@ function AdminDashboard() {
 
   return (
     <div className="max-w-6xl mx-auto my-12 px-4 select-none">
-      
       {/* Upper Status Control Row */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center border-b border-slate-200 pb-6 mb-8 gap-4">
         <div>
@@ -219,10 +238,7 @@ function AdminDashboard() {
           <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mt-1">Authorized Node Session: Verified OJT Developer Mode</p>
         </div>
 
-        {/* Real-Time Visitor Metrics Card and Session Control */}
         <div className="flex flex-wrap items-center gap-4 w-full lg:w-auto justify-start lg:justify-end">
-          
-          {/* Cumulative Traffic Badge */}
           <div className="bg-slate-50 border border-slate-200/80 rounded-2xl py-1.5 px-4 flex items-center gap-3 shadow-sm">
             <span className="text-base">👥</span>
             <div>
@@ -231,7 +247,6 @@ function AdminDashboard() {
             </div>
           </div>
 
-          {/* Real-Time Inquiries Received Tracking Badge Card Container */}
           <div className="bg-slate-50 border border-slate-200/80 rounded-2xl py-1.5 px-4 flex items-center gap-3 shadow-sm">
             <span className="text-base">📩</span>
             <div>
@@ -273,7 +288,7 @@ function AdminDashboard() {
         ))}
       </div>
 
-      {/* --- RENDER TARGET WORKSPACE WINDOWS MODULE --- */}
+      {/* Render Workspace Workspace */}
       <div className="bg-white border border-slate-200 rounded-3xl p-6 md:p-8 shadow-sm">
         {activeTab === 'home' && (
           <HomeManagement 
@@ -284,50 +299,26 @@ function AdminDashboard() {
           />
         )}
         
-        {/* WORKSPACE PANELS */}
         {activeTab === 'mandate' && (
           <div className="space-y-12 divide-y divide-slate-100">
-            <MandateConfig 
-              mandateState={mandateState} 
-              setMandateState={setMandateState} 
-              onSave={handlePersistLayout} 
-            />
+            <MandateConfig mandateState={mandateState} setMandateState={setMandateState} onSave={handlePersistLayout} />
             <div className="pt-10">
-              <VisionMissionConfig 
-                visionMissionState={visionMissionState} 
-                setVisionMissionState={setVisionMissionState} 
-                onSave={handlePersistLayout} 
-              />
+              <VisionMissionConfig visionMissionState={visionMissionState} setVisionMissionState={setVisionMissionState} onSave={handlePersistLayout} />
             </div>
           </div>
         )}
 
-        {/* COMPONENT REDIRECT VIEWS */}
         {activeTab === 'services' && (
-          <ServicesManagement 
-            state={serviceDirectoryState} 
-            setState={setServiceDirectoryState} 
-            onSave={(fileName, data) => handlePersistLayout(fileName, data)} 
-          />
+          <ServicesManagement state={serviceDirectoryState} setState={setServiceDirectoryState} onSave={handlePersistLayout} />
         )}
         {activeTab === 'contact' && (
-          <ContactManagement 
-            state={contactState} 
-            setState={setContactState} 
-            onSave={handlePersistLayout} 
-          />
+          <ContactManagement state={contactState} setState={setContactState} onSave={handlePersistLayout} />
         )}
         {activeTab === 'reports' && (
           <ReportsManagement state={reportForm} setState={setReportForm} onPublish={handlePublishReport} />
         )}
-
-        {/* 🟢 Forwarding analytics counters and structured time matrices directly down to children hooks */}
         {activeTab === 'analytics' && (
-          <AnalyticsManagement 
-            analyticsRows={analyticsRows} 
-            inquiryHours={inquiryHours} // 🟢 Connected structural prop
-            inquiriesList={inquiriesList}
-          />
+          <AnalyticsManagement analyticsRows={analyticsRows} inquiryHours={inquiryHours} inquiriesList={inquiriesList} />
         )}
       </div>
     </div>
