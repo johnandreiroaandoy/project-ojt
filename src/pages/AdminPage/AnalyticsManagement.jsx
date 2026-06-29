@@ -1,7 +1,7 @@
 // AnalyticsManagement.jsx
 import React, { useEffect, useState } from 'react';
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import AnalyticsTablesTabs from './AnalyticsTablesTabs'; // 👈 IMPORT THE NEW SUB-COMPONENT
+import AnalyticsTablesTabs from './AnalyticsTablesTabs';
 
 function AnalyticsManagement({ baseUrl, getAuthHeaders, onTotalInquiriesLoaded }) {
   const [timeframe, setTimeframe] = useState('day');
@@ -43,6 +43,11 @@ function AnalyticsManagement({ baseUrl, getAuthHeaders, onTotalInquiriesLoaded }
       return isNaN(d.getTime()) ? new Date(dateStr) : d;
     };
 
+    // Helper to check if a route belongs to administrative/auth paths
+    const isAdminOrAuthRoute = (pagename) => {
+      return pagename === '/admin' || pagename === '/contact/admin' || pagename === '/login';
+    };
+
     // 1. DAY VIEW (Hourly tracking)
     if (timeframe === 'day') {
       const hourBuckets = Array(24).fill(0).map((_, hour) => {
@@ -53,7 +58,7 @@ function AnalyticsManagement({ baseUrl, getAuthHeaders, onTotalInquiriesLoaded }
 
       if (activityLogs && activityLogs.length > 0) {
         activityLogs.forEach(log => {
-          if (log.pagename === '/admin' || log.pagename === '/contact/admin') return;
+          if (isAdminOrAuthRoute(log.pagename)) return; // 👈 Excluded /login here
           const dateObj = parseLogDate(log.accessed_at || log.created_at);
           if (dateObj) hourBuckets[dateObj.getHours()].traffic++;
         });
@@ -92,7 +97,7 @@ function AnalyticsManagement({ baseUrl, getAuthHeaders, onTotalInquiriesLoaded }
       
       if (activityLogs && activityLogs.length > 0) {
         activityLogs.forEach(item => {
-          if (item.pagename === '/admin' || item.pagename === '/contact/admin') return;
+          if (isAdminOrAuthRoute(item.pagename)) return; // 👈 Excluded /login here
           const dateObj = parseLogDate(item.accessed_at || item.created_at);
           if (dateObj) weekBuckets[dateObj.getDay()].traffic++;
         });
@@ -122,7 +127,7 @@ function AnalyticsManagement({ baseUrl, getAuthHeaders, onTotalInquiriesLoaded }
 
       if (activityLogs && activityLogs.length > 0) {
         activityLogs.forEach(item => {
-          if (item.pagename === '/admin' || item.pagename === '/contact/admin') return;
+          if (isAdminOrAuthRoute(item.pagename)) return; // 👈 Excluded /login here
           const dateObj = parseLogDate(item.accessed_at || item.created_at);
           if (dateObj) parseIntoBucket(dateObj, 'traffic');
         });
@@ -144,7 +149,7 @@ function AnalyticsManagement({ baseUrl, getAuthHeaders, onTotalInquiriesLoaded }
 
       if (activityLogs && activityLogs.length > 0) {
         activityLogs.forEach(item => {
-          if (item.pagename === '/admin' || item.pagename === '/contact/admin') return;
+          if (isAdminOrAuthRoute(item.pagename)) return; // 👈 Excluded /login here
           const dateObj = parseLogDate(item.accessed_at || item.created_at);
           if (dateObj) yearBuckets[dateObj.getMonth()].traffic++;
         });
@@ -162,7 +167,10 @@ function AnalyticsManagement({ baseUrl, getAuthHeaders, onTotalInquiriesLoaded }
     return [];
   };
 
-  const cleanBarChartData = analyticsRows.filter(row => row.pagename !== '/admin' && row.pagename !== '/contact/admin');
+  // Filter out admin and login paths from the distribution bar chart data stream
+  const cleanBarChartData = analyticsRows.filter(
+    row => row.pagename !== '/admin' && row.pagename !== '/contact/admin' && row.pagename !== '/login'
+  );
   const activeChartData = getProcessedTimelineData();
 
   return (
@@ -189,7 +197,7 @@ function AnalyticsManagement({ baseUrl, getAuthHeaders, onTotalInquiriesLoaded }
         <div className="bg-slate-50/60 p-5 border border-slate-200/80 rounded-2xl flex flex-col justify-between">
           <div className="mb-4">
             <h4 className="text-sm font-black text-[#002B5B] uppercase tracking-tight m-0">User Hits Per Page Distribution</h4>
-            <p className="text-[10px] text-slate-400 font-semibold uppercase mt-1">Popularity mapping across unique pages (Excludes Admin)</p>
+            <p className="text-[10px] text-slate-400 font-semibold uppercase mt-1">Popularity mapping across unique pages (Excludes Admin & Login)</p>
           </div>
           <div className="h-60 w-full">
             {cleanBarChartData.length === 0 ? (
