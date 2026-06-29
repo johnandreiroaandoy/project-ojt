@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
@@ -21,31 +21,12 @@ function AdminDashboard() {
 
   // 📊 Cleaned Analytics Tracker State Metrics
   const [visitorCount, setVisitorCount] = useState(0);
-  const [analyticsRows, setAnalyticsRows] = useState([]); 
-  const [inquiryHours, setInquiryHours] = useState([]); 
   const [contactInquiriesCount, setContactInquiriesCount] = useState(0); 
-  const [inquiriesList, setInquiriesList] = useState([]); 
-  const [activityLogs, setActivityLogs] = useState([]); 
-  const [timelineData, setTimelineData] = useState([]); // 📈 Added state layer for the Recharts graph dataset
 
-  // States Matrix
-  const [headerState, setHeaderState] = useState({ officialTagline: '', titleLine1: '', titleLine2: '', tagline: '' });
-  const [mandateState, setMandateState] = useState({ 
-    headerTitle: '', headerSubtitle: '', legalBasis: '', 
-    mandate: { title: '', quote: '', citation: '' }, 
-    powers: { title: '', list: [] } 
-  });
-  const [visionMissionState, setVisionMissionState] = useState({
-    vision: { title: '', statement: '' },
-    mission: { title: '', statement: '' }
-  });
-  const [servicesState, setServicesState] = useState({ miniTitle: '', sectionTitle: '', paragraphCopy: '', cards: [] });
-  const [serviceDirectoryState, setServiceDirectoryState] = useState({ header: { title: '', subtitle: '' }, controls: { backButton: '', actionButton: '' }, cards: [] }); 
-  const [contactState, setContactState] = useState({ heading: '', roomNumber: '', floor: '', building: '', street: '', city: '', phoneLabel: '', phoneNumber: '', localLines: '', emailLabel: '', emails: [] });
   const [reportForm, setReportForm] = useState({ title: '', year: '', month: '', file: null });
 
   // 🔒 SECURITY CHECK: Helper function to pull token and build authenticated headers
-  const getAuthHeaders = (extraHeaders = {}) => {
+  const getAuthHeaders = useCallback((extraHeaders = {}) => {
     const token = localStorage.getItem('adminToken');
     if (!token) {
       toast.error("🛑 Unauthenticated access attempt. Redirecting...");
@@ -56,114 +37,39 @@ function AdminDashboard() {
       'Authorization': `Bearer ${token}`,
       ...extraHeaders
     };
-  };
+  }, [navigate]);
 
-  // Sync all buffers simultaneously from local server files + Fetch analytics
+  // Sync dashboard-only summary counters. Each admin module loads its own editable file buffer.
   useEffect(() => {
-    const cacheBuster = `?v=${new Date().getTime()}`;
     setLoading(true);
 
     const headers = getAuthHeaders();
-    if (!headers) return;
+    if (!headers) {
+      setLoading(false);
+      return;
+    }
 
     Promise.all([
-      fetch(`${baseUrl}/data/header_data.json${cacheBuster}`).then(res => res.json()).catch(() => ({ topBar: {}, hero: {} })),
-      fetch(`${baseUrl}/data/mandate_data.json${cacheBuster}`).then(res => res.json()).catch(() => ({})),
-      fetch(`${baseUrl}/data/services.json${cacheBuster}`).then(res => res.json()).catch(() => ({})),
-      fetch(`${baseUrl}/data/services_directory.json${cacheBuster}`).then(res => res.json()).catch(() => ({ header: {}, controls: {}, cards: [] })), 
-      fetch(`${baseUrl}/data/contact_info.json${cacheBuster}`).then(res => res.json()).catch(() => ({})),
-      fetch(`${baseUrl}/data/vision_mission.json${cacheBuster}`).then(res => res.json()).catch(() => ({})),
       fetch(`${baseUrl}/api/analytics/track-visit?pagename=admin_summary`).then(res => res.json()).catch(() => ({ total_visitors: 0 })),
-      fetch(`${baseUrl}/api/analytics/metrics`, { headers }).then(res => res.json()).catch(() => ({ metrics: [], inquiryHours: [], totalInquiries: 0 })),
-      fetch(`${baseUrl}/api/analytics/inquiries`, { headers }).then(res => res.json()).catch(() => ({ inquiries: [] })), // Unified endpoint map context
-      fetch(`${baseUrl}/api/analytics/activity-logs`, { headers }).then(res => res.json()).catch(() => ({ activityLogs: [] })),
-      fetch(`${baseUrl}/api/analytics/chart-timeline`, { headers }).then(res => res.json()).catch(() => ({ timelineData: [] })) // 📈 FETCH VISITOR LOG TIMELINE DATA
+      fetch(`${baseUrl}/api/analytics/metrics`, { headers }).then(res => res.json()).catch(() => ({ totalInquiries: 0 }))
     ])
-    .then(([headerData, mandateData, servicesData, directoryData, contactData, visionMissionData, analyticsData, metricsData, inquiriesData, logsData, chartData]) => {
-      setHeaderState({
-        officialTagline: headerData.topBar?.officialTagline || '',
-        titleLine1: headerData.hero?.titleLine1 || '',
-        titleLine2: headerData.hero?.titleLine2 || '',
-        tagline: headerData.hero?.tagline || ''
-      });
-      
-      setMandateState({
-        headerTitle: mandateData.headerTitle || '',
-        headerSubtitle: mandateData.headerSubtitle || '',
-        legalBasis: mandateData.legalBasis || '',
-        mandate: {
-          title: mandateData.mandate?.title || '',
-          quote: mandateData.mandate?.quote || '',
-          citation: mandateData.mandate?.citation || ''
-        },
-        powers: {
-          title: mandateData.powers?.title || '',
-          list: mandateData.powers?.list || []
-        }
-      });
-
-      setVisionMissionState({
-        vision: { title: visionMissionData.vision?.title || '', statement: visionMissionData.vision?.statement || '' },
-        mission: { title: visionMissionData.mission?.title || '', statement: visionMissionData.mission?.statement || '' }
-      });
-
-      setServicesState({
-        miniTitle: servicesData.miniTitle || '',
-        sectionTitle: servicesData.sectionTitle || '',
-        paragraphCopy: servicesData.paragraphCopy || '',
-        cards: servicesData.cards || []
-      });
-      
-      setServiceDirectoryState({
-        header: { title: directoryData.header?.title || '', subtitle: directoryData.header?.subtitle || '' },
-        controls: { backButton: directoryData.controls?.backButton || '', actionButton: directoryData.controls?.actionButton || '' },
-        cards: directoryData.cards || []
-      }); 
-      
-      setContactState({
-        heading: contactData.heading || '',
-        roomNumber: contactData.roomNumber || '',
-        floor: contactData.floor || '',
-        building: contactData.building || '',
-        street: contactData.street || '',
-        city: contactData.city || '',
-        phoneLabel: contactData.phoneLabel || '',
-        phoneNumber: contactData.phoneNumber || '',
-        localLines: contactData.localLines || '',
-        emailLabel: contactData.emailLabel || '',
-        emails: contactData.emails || []
-      });
-
+    .then(([analyticsData, metricsData]) => {
       if (analyticsData && analyticsData.total_visitors) {
         setVisitorCount(analyticsData.total_visitors);
       }
 
-      if (metricsData) {
-        if (metricsData.metrics) setAnalyticsRows(metricsData.metrics);
-        if (metricsData.inquiryHours) setInquiryHours(metricsData.inquiryHours); 
-        if (metricsData.totalInquiries !== undefined) setContactInquiriesCount(metricsData.totalInquiries);
-      }
-
-      if (inquiriesData && inquiriesData.inquiries) {
-        setInquiriesList(inquiriesData.inquiries);
-      }
-
-      if (logsData && logsData.activityLogs) {
-        setActivityLogs(logsData.activityLogs);
-      }
-
-      if (chartData && chartData.timelineData) {
-        setTimelineData(chartData.timelineData); // 📈 Map timeline array to state frame
+      if (metricsData && metricsData.totalInquiries !== undefined) {
+        setContactInquiriesCount(metricsData.totalInquiries);
       }
     })
     .catch(err => {
       console.error(err);
-      toast.error("⚠️ Failed to load some resource buffers.");
+      toast.error("Failed to load dashboard summary counters.");
     })
     .finally(() => setLoading(false));
-  }, [baseUrl]);
+  }, [baseUrl, getAuthHeaders]);
 
-  // 🔒 SECURED: Save Layout Changes via Config File Controller
+  // Secured: Save layout changes via config file controller.
   const handlePersistLayout = async (targetFileName, payloadData) => {
     const authHeaders = getAuthHeaders({ 'Content-Type': 'application/json' });
     if (!authHeaders) return;
@@ -303,38 +209,34 @@ function AdminDashboard() {
       <div className="bg-white border border-slate-200 rounded-3xl p-6 md:p-8 shadow-sm">
         {activeTab === 'home' && (
           <HomeManagement 
-            headerState={headerState} setHeaderState={setHeaderState}
-            servicesState={servicesState} setServicesState={setServicesState}
-            contactState={contactState} setContactState={setContactState}
+            baseUrl={baseUrl}
             onSave={handlePersistLayout} 
           />
         )}
         
         {activeTab === 'mandate' && (
           <div className="space-y-12 divide-y divide-slate-100">
-            <MandateConfig mandateState={mandateState} setMandateState={setMandateState} onSave={handlePersistLayout} />
+            <MandateConfig baseUrl={baseUrl} onSave={handlePersistLayout} />
             <div className="pt-10">
-              <VisionMissionConfig visionMissionState={visionMissionState} setVisionMissionState={setVisionMissionState} onSave={handlePersistLayout} />
+              <VisionMissionConfig baseUrl={baseUrl} onSave={handlePersistLayout} />
             </div>
           </div>
         )}
 
         {activeTab === 'services' && (
-          <ServicesManagement state={serviceDirectoryState} setState={setServiceDirectoryState} onSave={handlePersistLayout} />
+          <ServicesManagement baseUrl={baseUrl} onSave={handlePersistLayout} />
         )}
         {activeTab === 'contact' && (
-          <ContactManagement state={contactState} setState={setContactState} onSave={handlePersistLayout} />
+          <ContactManagement baseUrl={baseUrl} onSave={handlePersistLayout} />
         )}
         {activeTab === 'reports' && (
           <ReportsManagement state={reportForm} setState={setReportForm} onPublish={handlePublishReport} />
         )}
         {activeTab === 'analytics' && (
           <AnalyticsManagement 
-            analyticsRows={analyticsRows} 
-            inquiryHours={inquiryHours} 
-            inquiriesList={inquiriesList} 
-            activityLogs={activityLogs}
-            timelineData={timelineData} // 📈 Passed down the aggregated visual graph matrices hook link
+            baseUrl={baseUrl}
+            getAuthHeaders={getAuthHeaders}
+            onTotalInquiriesLoaded={setContactInquiriesCount}
           />
         )}
       </div>

@@ -1,6 +1,30 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
-function ContactManagement({ state, setState, onSave }) {
+function ContactManagement({ baseUrl, onSave }) {
+  const [state, setState] = useState({ heading: '', roomNumber: '', floor: '', building: '', street: '', city: '', phoneLabel: '', phoneNumber: '', localLines: '', emailLabel: '', emails: [] });
+
+  useEffect(() => {
+    const cacheBuster = `?v=${new Date().getTime()}`;
+
+    fetch(`${baseUrl}/data/contact_info.json${cacheBuster}`)
+      .then(res => res.json())
+      .catch(() => ({}))
+      .then(contactData => {
+        setState({
+          heading: contactData.heading || '',
+          roomNumber: contactData.roomNumber || '',
+          floor: contactData.floor || '',
+          building: contactData.building || '',
+          street: contactData.street || '',
+          city: contactData.city || '',
+          phoneLabel: contactData.phoneLabel || '',
+          phoneNumber: contactData.phoneNumber || '',
+          localLines: contactData.localLines || '',
+          emailLabel: contactData.emailLabel || '',
+          emails: contactData.emails || []
+        });
+      });
+  }, [baseUrl]);
 
   const updateEmailItem = (index, newValue) => {
     setState(prev => {

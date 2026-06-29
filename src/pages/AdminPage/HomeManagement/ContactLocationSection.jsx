@@ -1,13 +1,33 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
-function ContactLocationSection({ contactState, setContactState, onSave }) {
+function ContactLocationSection({ baseUrl, onSave }) {
+  const [contactState, setContactState] = useState({ heading: '', roomNumber: '', floor: '', building: '', street: '', city: '', phoneLabel: '', phoneNumber: '', localLines: '', emailLabel: '', emails: [] });
   const originalContactMock = useRef(null);
 
   useEffect(() => {
-    if (contactState && !originalContactMock.current) {
-      originalContactMock.current = JSON.parse(JSON.stringify(contactState));
-    }
-  }, [contactState]);
+    const cacheBuster = `?v=${new Date().getTime()}`;
+
+    fetch(`${baseUrl}/data/contact_info.json${cacheBuster}`)
+      .then(res => res.json())
+      .catch(() => ({}))
+      .then(contactData => {
+        const nextState = {
+          heading: contactData.heading || '',
+          roomNumber: contactData.roomNumber || '',
+          floor: contactData.floor || '',
+          building: contactData.building || '',
+          street: contactData.street || '',
+          city: contactData.city || '',
+          phoneLabel: contactData.phoneLabel || '',
+          phoneNumber: contactData.phoneNumber || '',
+          localLines: contactData.localLines || '',
+          emailLabel: contactData.emailLabel || '',
+          emails: contactData.emails || []
+        };
+        setContactState(nextState);
+        originalContactMock.current = JSON.parse(JSON.stringify(nextState));
+      });
+  }, [baseUrl]);
 
   const contactEmails = contactState?.emails || [];
 

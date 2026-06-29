@@ -1,6 +1,35 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
-function MandateConfig({ mandateState, setMandateState, onSave }) {
+function MandateConfig({ baseUrl, onSave }) {
+  const [mandateState, setMandateState] = useState({ 
+    headerTitle: '', headerSubtitle: '', legalBasis: '', 
+    mandate: { title: '', quote: '', citation: '' }, 
+    powers: { title: '', list: [] } 
+  });
+
+  useEffect(() => {
+    const cacheBuster = `?v=${new Date().getTime()}`;
+
+    fetch(`${baseUrl}/data/mandate_data.json${cacheBuster}`)
+      .then(res => res.json())
+      .catch(() => ({}))
+      .then(mandateData => {
+        setMandateState({
+          headerTitle: mandateData.headerTitle || '',
+          headerSubtitle: mandateData.headerSubtitle || '',
+          legalBasis: mandateData.legalBasis || '',
+          mandate: {
+            title: mandateData.mandate?.title || '',
+            quote: mandateData.mandate?.quote || '',
+            citation: mandateData.mandate?.citation || ''
+          },
+          powers: {
+            title: mandateData.powers?.title || '',
+            list: mandateData.powers?.list || []
+          }
+        });
+      });
+  }, [baseUrl]);
 
   const updatePowerItem = (index, newValue) => {
     setMandateState(prev => {

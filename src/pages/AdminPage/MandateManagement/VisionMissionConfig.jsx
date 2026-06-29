@@ -1,6 +1,30 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
-function VisionMissionConfig({ visionMissionState, setVisionMissionState, onSave }) {
+function VisionMissionConfig({ baseUrl, onSave }) {
+  const [visionMissionState, setVisionMissionState] = useState({
+    vision: { title: '', statement: '' },
+    mission: { title: '', statement: '' }
+  });
+
+  useEffect(() => {
+    const cacheBuster = `?v=${new Date().getTime()}`;
+
+    fetch(`${baseUrl}/data/vision_mission.json${cacheBuster}`)
+      .then(res => res.json())
+      .catch(() => ({}))
+      .then(visionMissionData => {
+        setVisionMissionState({
+          vision: {
+            title: visionMissionData.vision?.title || '',
+            statement: visionMissionData.vision?.statement || ''
+          },
+          mission: {
+            title: visionMissionData.mission?.title || '',
+            statement: visionMissionData.mission?.statement || ''
+          }
+        });
+      });
+  }, [baseUrl]);
 
   return (
     <div className="space-y-6">

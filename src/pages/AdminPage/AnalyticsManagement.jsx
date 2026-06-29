@@ -1,10 +1,38 @@
 // AnalyticsManagement.jsx
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import AnalyticsTablesTabs from './AnalyticsTablesTabs'; // 👈 IMPORT THE NEW SUB-COMPONENT
 
-function AnalyticsManagement({ analyticsRows = [], inquiryHours = [], inquiriesList = [], activityLogs = [], timelineData = [] }) {
+function AnalyticsManagement({ baseUrl, getAuthHeaders, onTotalInquiriesLoaded }) {
   const [timeframe, setTimeframe] = useState('day');
+  const [analyticsRows, setAnalyticsRows] = useState([]);
+  const [inquiryHours, setInquiryHours] = useState([]);
+  const [inquiriesList, setInquiriesList] = useState([]);
+  const [activityLogs, setActivityLogs] = useState([]);
+  const [timelineData, setTimelineData] = useState([]);
+
+  useEffect(() => {
+    const headers = getAuthHeaders();
+    if (!headers) return;
+
+    Promise.all([
+      fetch(`${baseUrl}/api/analytics/metrics`, { headers }).then(res => res.json()).catch(() => ({ metrics: [], inquiryHours: [], totalInquiries: 0 })),
+      fetch(`${baseUrl}/api/analytics/inquiries`, { headers }).then(res => res.json()).catch(() => ({ inquiries: [] })),
+      fetch(`${baseUrl}/api/analytics/activity-logs`, { headers }).then(res => res.json()).catch(() => ({ activityLogs: [] })),
+      fetch(`${baseUrl}/api/analytics/chart-timeline`, { headers }).then(res => res.json()).catch(() => ({ timelineData: [] }))
+    ])
+      .then(([metricsData, inquiriesData, logsData, chartData]) => {
+        if (metricsData.metrics) setAnalyticsRows(metricsData.metrics);
+        if (metricsData.inquiryHours) setInquiryHours(metricsData.inquiryHours);
+        if (metricsData.totalInquiries !== undefined) onTotalInquiriesLoaded(metricsData.totalInquiries);
+        if (inquiriesData.inquiries) setInquiriesList(inquiriesData.inquiries);
+        if (logsData.activityLogs) setActivityLogs(logsData.activityLogs);
+        if (chartData.timelineData) setTimelineData(chartData.timelineData);
+      })
+      .catch(err => {
+        console.error(err);
+      });
+  }, [baseUrl, getAuthHeaders, onTotalInquiriesLoaded]);
 
   // 🟢 PARSING ENGINE: Processes actual database entries from dynamic server payloads
   const getProcessedTimelineData = () => {

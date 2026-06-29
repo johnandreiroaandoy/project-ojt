@@ -1,13 +1,26 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
-function CoreServicesSection({ servicesState, setServicesState, onSave }) {
+function CoreServicesSection({ baseUrl, onSave }) {
+  const [servicesState, setServicesState] = useState({ miniTitle: '', sectionTitle: '', paragraphCopy: '', cards: [] });
   const originalServicesMock = useRef(null);
 
   useEffect(() => {
-    if (servicesState && !originalServicesMock.current) {
-      originalServicesMock.current = JSON.parse(JSON.stringify(servicesState));
-    }
-  }, [servicesState]);
+    const cacheBuster = `?v=${new Date().getTime()}`;
+
+    fetch(`${baseUrl}/data/services.json${cacheBuster}`)
+      .then(res => res.json())
+      .catch(() => ({}))
+      .then(servicesData => {
+        const nextState = {
+          miniTitle: servicesData.miniTitle || '',
+          sectionTitle: servicesData.sectionTitle || '',
+          paragraphCopy: servicesData.paragraphCopy || '',
+          cards: servicesData.cards || []
+        };
+        setServicesState(nextState);
+        originalServicesMock.current = JSON.parse(JSON.stringify(nextState));
+      });
+  }, [baseUrl]);
 
   const cards = servicesState?.cards || [];
   const cityCard = cards.find(c => c.id === 'city') || {};

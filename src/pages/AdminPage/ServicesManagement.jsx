@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 // 📂 Import the 5 separate service editor components from your ServicesEditor folder
 import CertificationOfPayslip from './ServicesEditor/CertificationOfPayslip';
@@ -10,12 +10,33 @@ import Elap from './ServicesEditor/Elap';
 // 🚀 NEW IMPORT: Reusable template editor handling any custom additions automatically
 import GenericServiceEditor from './ServicesEditor/GenericServiceEditor';
 
-function ServicesManagement({ state, setState, onSave }) {
+function ServicesManagement({ baseUrl, onSave }) {
   // Grab environmental URL context for inner dynamic fetch routines
-  const baseUrl = import.meta.env.VITE_API_BASE_URL;
+  const [state, setState] = useState({ header: { title: '', subtitle: '' }, controls: { backButton: '', actionButton: '' }, cards: [] });
   
   // Local state tracker to swap between standard menu view and dedicated card config mode
   const [selectedServiceId, setSelectedServiceId] = useState(null);
+
+  useEffect(() => {
+    const cacheBuster = `?v=${new Date().getTime()}`;
+
+    fetch(`${baseUrl}/data/services_directory.json${cacheBuster}`)
+      .then(res => res.json())
+      .catch(() => ({ header: {}, controls: {}, cards: [] }))
+      .then(directoryData => {
+        setState({
+          header: {
+            title: directoryData.header?.title || '',
+            subtitle: directoryData.header?.subtitle || ''
+          },
+          controls: {
+            backButton: directoryData.controls?.backButton || '',
+            actionButton: directoryData.controls?.actionButton || ''
+          },
+          cards: directoryData.cards || []
+        });
+      });
+  }, [baseUrl]);
 
   const cardsList = state?.cards || [];
   const header = state?.header || { title: "Core Services", subtitle: "" };

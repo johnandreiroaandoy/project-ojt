@@ -1,13 +1,26 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
-function HeaderHeroSection({ headerState, setHeaderState, onSave }) {
+function HeaderHeroSection({ baseUrl, onSave }) {
+  const [headerState, setHeaderState] = useState({ officialTagline: '', titleLine1: '', titleLine2: '', tagline: '' });
   const originalHeaderMock = useRef(null);
 
   useEffect(() => {
-    if (headerState && !originalHeaderMock.current) {
-      originalHeaderMock.current = JSON.parse(JSON.stringify(headerState));
-    }
-  }, [headerState]);
+    const cacheBuster = `?v=${new Date().getTime()}`;
+
+    fetch(`${baseUrl}/data/header_data.json${cacheBuster}`)
+      .then(res => res.json())
+      .catch(() => ({ topBar: {}, hero: {} }))
+      .then(headerData => {
+        const nextState = {
+          officialTagline: headerData.topBar?.officialTagline || '',
+          titleLine1: headerData.hero?.titleLine1 || '',
+          titleLine2: headerData.hero?.titleLine2 || '',
+          tagline: headerData.hero?.tagline || ''
+        };
+        setHeaderState(nextState);
+        originalHeaderMock.current = JSON.parse(JSON.stringify(nextState));
+      });
+  }, [baseUrl]);
 
   const undoHeaderChanges = () => {
     if (originalHeaderMock.current) {
