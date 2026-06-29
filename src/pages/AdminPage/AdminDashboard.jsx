@@ -25,6 +25,8 @@ function AdminDashboard() {
   const [inquiryHours, setInquiryHours] = useState([]); 
   const [contactInquiriesCount, setContactInquiriesCount] = useState(0); 
   const [inquiriesList, setInquiriesList] = useState([]); 
+  const [activityLogs, setActivityLogs] = useState([]); 
+  const [timelineData, setTimelineData] = useState([]); // 📈 Added state layer for the Recharts graph dataset
 
   // States Matrix
   const [headerState, setHeaderState] = useState({ officialTagline: '', titleLine1: '', titleLine2: '', tagline: '' });
@@ -73,9 +75,11 @@ function AdminDashboard() {
       fetch(`${baseUrl}/data/vision_mission.json${cacheBuster}`).then(res => res.json()).catch(() => ({})),
       fetch(`${baseUrl}/api/analytics/track-visit?pagename=admin_summary`).then(res => res.json()).catch(() => ({ total_visitors: 0 })),
       fetch(`${baseUrl}/api/analytics/metrics`, { headers }).then(res => res.json()).catch(() => ({ metrics: [], inquiryHours: [], totalInquiries: 0 })),
-      fetch(`${baseUrl}/api/analytics/inquiries-list`, { headers }).then(res => res.json()).catch(() => ({ inquiriesList: [] }))
+      fetch(`${baseUrl}/api/analytics/inquiries`, { headers }).then(res => res.json()).catch(() => ({ inquiries: [] })), // Unified endpoint map context
+      fetch(`${baseUrl}/api/analytics/activity-logs`, { headers }).then(res => res.json()).catch(() => ({ activityLogs: [] })),
+      fetch(`${baseUrl}/api/analytics/chart-timeline`, { headers }).then(res => res.json()).catch(() => ({ timelineData: [] })) // 📈 FETCH VISITOR LOG TIMELINE DATA
     ])
-    .then(([headerData, mandateData, servicesData, directoryData, contactData, visionMissionData, analyticsData, metricsData, inquiriesData]) => {
+    .then(([headerData, mandateData, servicesData, directoryData, contactData, visionMissionData, analyticsData, metricsData, inquiriesData, logsData, chartData]) => {
       setHeaderState({
         officialTagline: headerData.topBar?.officialTagline || '',
         titleLine1: headerData.hero?.titleLine1 || '',
@@ -140,8 +144,16 @@ function AdminDashboard() {
         if (metricsData.totalInquiries !== undefined) setContactInquiriesCount(metricsData.totalInquiries);
       }
 
-      if (inquiriesData && inquiriesData.inquiriesList) {
-        setInquiriesList(inquiriesData.inquiriesList);
+      if (inquiriesData && inquiriesData.inquiries) {
+        setInquiriesList(inquiriesData.inquiries);
+      }
+
+      if (logsData && logsData.activityLogs) {
+        setActivityLogs(logsData.activityLogs);
+      }
+
+      if (chartData && chartData.timelineData) {
+        setTimelineData(chartData.timelineData); // 📈 Map timeline array to state frame
       }
     })
     .catch(err => {
@@ -182,7 +194,6 @@ function AdminDashboard() {
       return toast.error("Please provide both a description title and a valid PDF file.");
     }
 
-    // Do NOT declare 'Content-Type' when appending native browser FormData files
     const authHeaders = getAuthHeaders();
     if (!authHeaders) return;
 
@@ -288,7 +299,7 @@ function AdminDashboard() {
         ))}
       </div>
 
-      {/* Render Workspace Workspace */}
+      {/* Render Workspace Area */}
       <div className="bg-white border border-slate-200 rounded-3xl p-6 md:p-8 shadow-sm">
         {activeTab === 'home' && (
           <HomeManagement 
@@ -318,7 +329,13 @@ function AdminDashboard() {
           <ReportsManagement state={reportForm} setState={setReportForm} onPublish={handlePublishReport} />
         )}
         {activeTab === 'analytics' && (
-          <AnalyticsManagement analyticsRows={analyticsRows} inquiryHours={inquiryHours} inquiriesList={inquiriesList} />
+          <AnalyticsManagement 
+            analyticsRows={analyticsRows} 
+            inquiryHours={inquiryHours} 
+            inquiriesList={inquiriesList} 
+            activityLogs={activityLogs}
+            timelineData={timelineData} // 📈 Passed down the aggregated visual graph matrices hook link
+          />
         )}
       </div>
     </div>
