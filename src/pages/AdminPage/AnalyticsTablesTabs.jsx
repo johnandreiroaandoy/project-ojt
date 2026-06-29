@@ -1,37 +1,125 @@
 // AnalyticsTablesTabs.jsx
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 
 export default function AnalyticsTablesTabs({ inquiriesList = [], activityLogs = [] }) {
   const [activeTab, setActiveTab] = useState('submissions');
+  const [filterRange, setFilterRange] = useState('all'); // 'all' | 'today' | 'week' | 'month'
+
+  // Helper date parsing framework to catch potential standard or non-standard SQL text values safely
+  const parseTargetDate = (dateStr) => {
+    if (!dateStr) return null;
+    const safeStr = dateStr.includes('Z') || dateStr.includes('+') ? dateStr : dateStr.replace(' ', 'T');
+    const d = new Date(safeStr);
+    return isNaN(d.getTime()) ? new Date(dateStr) : d;
+  };
+
+  // Helper evaluator checks if a target date object falls within the designated calendar timeline boundaries
+  const isWithinTimeRange = (dateObj, range) => {
+    if (!dateObj || range === 'all') return true;
+    
+    const now = new Date();
+    const target = new Date(dateObj);
+
+    switch (range) {
+      case 'today':
+        return target.toDateString() === now.toDateString();
+      case 'week': {
+        const oneWeekAgo = new Date();
+        oneWeekAgo.setDate(now.getDate() - 7);
+        return target >= oneWeekAgo && target <= now;
+      }
+      case 'month': {
+        const oneMonthAgo = new Date();
+        oneMonthAgo.setMonth(now.getMonth() - 1);
+        return target >= oneMonthAgo && target <= now;
+      }
+      default:
+        return true;
+    }
+  };
+
+  // 📈 PROCESSED INQUIRIES ENGINE (Filtered & Sorted Descending)
+  const processedInquiries = useMemo(() => {
+    return inquiriesList
+      .filter(inq => {
+        const dateObj = parseTargetDate(inq.created_at);
+        return isWithinTimeRange(dateObj, filterRange);
+      })
+      .sort((a, b) => {
+        const dateA = parseTargetDate(a.created_at) || 0;
+        const dateB = parseTargetDate(b.created_at) || 0;
+        return dateB - dateA; // Newest entry first
+      });
+  }, [inquiriesList, filterRange]);
+
+  // 📜 PROCESSED ACTIVITY LOGS ENGINE (Filtered & Sorted Descending)
+  const processedLogs = useMemo(() => {
+    return activityLogs
+      .filter(log => {
+        const dateObj = parseTargetDate(log.accessed_at || log.created_at);
+        return isWithinTimeRange(dateObj, filterRange);
+      })
+      .sort((a, b) => {
+        const dateA = parseTargetDate(a.accessed_at || a.created_at) || 0;
+        const dateB = parseTargetDate(b.accessed_at || b.created_at) || 0;
+        return dateB - dateA; // Newest entry first
+      });
+  }, [activityLogs, filterRange]);
 
   return (
     <div className="pt-4 border-t border-slate-100">
       
-      {/* 📑 TAB NAVIGATION HEADER */}
-      <div className="flex border-b border-slate-200 mb-6 gap-6">
-        <button
-          onClick={() => setActiveTab('submissions')}
-          className={`pb-3 text-sm font-black uppercase tracking-wider transition-all cursor-pointer relative ${
-            activeTab === 'submissions' ? 'text-[#002B5B]' : 'text-slate-400 hover:text-slate-600'
-          }`}
-        >
-          📩 Recent Contact Submissions
-          {activeTab === 'submissions' && (
-            <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#002B5B] rounded-full" />
-          )}
-        </button>
+      {/* 📑 TABS & CONTROLLER ROW */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-slate-200 mb-6 gap-4">
         
-        <button
-          onClick={() => setActiveTab('logs')}
-          className={`pb-3 text-sm font-black uppercase tracking-wider transition-all cursor-pointer relative ${
-            activeTab === 'logs' ? 'text-[#002B5B]' : 'text-slate-400 hover:text-slate-600'
-          }`}
-        >
-          📜 Real-Time System Access Logs
-          {activeTab === 'logs' && (
-            <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#002B5B] rounded-full" />
-          )}
-        </button>
+        {/* TAB NAVIGATION HEADER */}
+        <div className="flex gap-6">
+          <button
+            onClick={() => setActiveTab('submissions')}
+            className={`pb-3 text-sm font-black uppercase tracking-wider transition-all cursor-pointer relative ${
+              activeTab === 'submissions' ? 'text-[#002B5B]' : 'text-slate-400 hover:text-slate-600'
+            }`}
+          >
+            {`📩 Submissions (${processedInquiries.length})`}
+            {activeTab === 'submissions' && (
+              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#002B5B] rounded-full" />
+            )}
+          </button>
+          
+          <button
+            onClick={() => setActiveTab('logs')}
+            className={`pb-3 text-sm font-black uppercase tracking-wider transition-all cursor-pointer relative ${
+              activeTab === 'logs' ? 'text-[#002B5B]' : 'text-slate-400 hover:text-slate-600'
+            }`}
+          >
+            {`📜 System Logs (${processedLogs.length})`}
+            {activeTab === 'logs' && (
+              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#002B5B] rounded-full" />
+            )}
+          </button>
+        </div>
+
+        {/* 📅 SUB-FILTER PILLS CONTROLLER */}
+        <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 self-start md:self-auto mb-2 md:mb-0">
+          {[
+            { id: 'all', label: 'All Time' },
+            { id: 'today', label: 'Today' },
+            { id: 'week', label: '7 Days' },
+            { id: 'month', label: '30 Days' }
+          ].map((r) => (
+            <button
+              key={r.id}
+              onClick={() => setFilterRange(r.id)}
+              className={`py-1 px-3 text-[11px] font-bold uppercase tracking-wide rounded-lg transition-all cursor-pointer ${
+                filterRange === r.id 
+                  ? 'bg-white text-[#002B5B] shadow-sm font-black' 
+                  : 'text-slate-400 hover:text-slate-700'
+              }`}
+            >
+              {r.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* 📑 TAB CONDITIONAL PANELS */}
@@ -41,7 +129,7 @@ export default function AnalyticsTablesTabs({ inquiriesList = [], activityLogs =
           <div>
             <div className="mb-4">
               <p className="text-xs text-slate-400 font-semibold uppercase m-0">
-                Incoming direct inquiries and user messages parsed dynamically from the contacts database table
+                Incoming direct inquiries and user messages sorted dynamically (newest records on top)
               </p>
             </div>
             <div className="overflow-x-auto border border-slate-200 rounded-2xl shadow-sm bg-white">
@@ -54,14 +142,14 @@ export default function AnalyticsTablesTabs({ inquiriesList = [], activityLogs =
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {inquiriesList.length === 0 ? (
+                  {processedInquiries.length === 0 ? (
                     <tr>
                       <td colSpan="3" className="py-12 text-center font-bold text-slate-400 uppercase tracking-wider">
-                        📩 No user inquiries logged inside the database ledger yet.
+                        📩 No matching user inquiries logged inside this specific date frame.
                       </td>
                     </tr>
                   ) : (
-                    inquiriesList.map((inquiry) => (
+                    processedInquiries.map((inquiry) => (
                       <tr key={inquiry.id} className="hover:bg-slate-50/60 transition-colors align-top">
                         <td className="py-4 px-6">
                           <p className="font-black text-[#002B5B] m-0 leading-tight">{inquiry.name}</p>
@@ -98,7 +186,7 @@ export default function AnalyticsTablesTabs({ inquiriesList = [], activityLogs =
           <div>
             <div className="mb-4">
               <p className="text-xs text-slate-400 font-semibold uppercase m-0">
-                Live historical trace sequence tracking individual page routing events out of visitor_activity_logs
+                Live chronological tracking sequence mapping endpoint hits filtered down to your chosen active timeline
               </p>
             </div>
             <div className="overflow-x-auto border border-slate-200 rounded-2xl shadow-sm bg-white">
@@ -111,14 +199,14 @@ export default function AnalyticsTablesTabs({ inquiriesList = [], activityLogs =
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-medium">
-                  {activityLogs.length === 0 ? (
+                  {processedLogs.length === 0 ? (
                     <tr>
                       <td colSpan="3" className="py-12 text-center font-bold text-slate-400 uppercase tracking-wider">
-                        📜 No sequential routing trail entries captured yet.
+                        📜 No diagnostic routing entries captured within this time boundary.
                       </td>
                     </tr>
                   ) : (
-                    activityLogs.map((log) => (
+                    processedLogs.map((log) => (
                       <tr key={log.id} className="hover:bg-slate-50/60 transition-colors">
                         <td className="py-4 px-6 text-xs text-slate-400 font-mono font-bold">
                           LOG-{String(log.id).padStart(5, '0')}
