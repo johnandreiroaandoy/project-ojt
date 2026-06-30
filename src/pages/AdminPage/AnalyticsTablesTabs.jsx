@@ -4,6 +4,13 @@ import React, { useState, useMemo } from 'react';
 export default function AnalyticsTablesTabs({ inquiriesList = [], activityLogs = [], userMatrix = [] }) {
   const [activeTab, setActiveTab] = useState('submissions');
   const [filterRange, setFilterRange] = useState('all'); // 'all' | 'today' | 'week' | 'month'
+  const [submissionDateFilter, setSubmissionDateFilter] = useState({
+    year: 'all',
+    month: 'all',
+    day: 'all',
+    hour: 'all',
+  });
+  const [submissionSearch, setSubmissionSearch] = useState('');
 
   // Helper date parsing framework to catch potential standard or non-standard SQL text values safely
   const parseTargetDate = (dateStr) => {
@@ -11,6 +18,18 @@ export default function AnalyticsTablesTabs({ inquiriesList = [], activityLogs =
     const safeStr = dateStr.includes('Z') || dateStr.includes('+') ? dateStr : dateStr.replace(' ', 'T');
     const d = new Date(safeStr);
     return isNaN(d.getTime()) ? new Date(dateStr) : d;
+  };
+
+  const formatTimelineDate = (dateStr) => {
+    const date = parseTargetDate(dateStr);
+    if (!date || isNaN(date.getTime())) return '---';
+
+    const year = date.getFullYear();
+    const month = date.toLocaleString(undefined, { month: 'long' });
+    const day = date.getDate();
+    const hour = date.toLocaleString(undefined, { hour: 'numeric', hour12: true }).replace(/\s/g, '');
+
+    return `${year} ${month} > ${month} ${day} > ${hour}`;
   };
 
   // 🟢 ENHANCED EVALUATOR: Timezone-normalized calendar boundary checking
@@ -64,19 +83,101 @@ export default function AnalyticsTablesTabs({ inquiriesList = [], activityLogs =
     return 'bg-indigo-50 text-indigo-700 border-indigo-200'; // Desktop default
   };
 
+  const submissionDateOptions = useMemo(() => ({
+    years: Array.from({ length: 12 }, (_, index) => 2015 + index),
+    months: [
+      [0, 'January'],
+      [1, 'February'],
+      [2, 'March'],
+      [3, 'April'],
+      [4, 'May'],
+      [5, 'June'],
+      [6, 'July'],
+      [7, 'August'],
+      [8, 'September'],
+      [9, 'October'],
+      [10, 'November'],
+      [11, 'December'],
+    ],
+    days: Array.from({ length: 31 }, (_, index) => index + 1),
+    hours: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 0],
+  }), []);
+
+  const matchesSubmissionDateFilter = (dateObj) => {
+    if (!dateObj) return false;
+
+    const { year, month, day, hour } = submissionDateFilter;
+    if (year !== 'all' && dateObj.getFullYear() !== Number(year)) return false;
+    if (month !== 'all' && dateObj.getMonth() !== Number(month)) return false;
+    if (day !== 'all' && dateObj.getDate() !== Number(day)) return false;
+    if (hour !== 'all' && dateObj.getHours() !== Number(hour)) return false;
+    return true;
+  };
+
+  const updateSubmissionDateFilter = (key, value) => {
+    if (value !== 'all') setFilterRange('all');
+
+    setSubmissionDateFilter((current) => ({
+      ...current,
+      [key]: value,
+      ...(key === 'year' ? { month: 'all', day: 'all', hour: 'all' } : {}),
+      ...(key === 'month' ? { day: 'all', hour: 'all' } : {}),
+      ...(key === 'day' ? { hour: 'all' } : {}),
+    }));
+  };
+
+  const resetSubmissionFilters = () => {
+    setFilterRange('all');
+    setSubmissionSearch('');
+    setSubmissionDateFilter({
+      year: 'all',
+      month: 'all',
+      day: 'all',
+      hour: 'all',
+    });
+  };
+
   // 📈 PROCESSED INQUIRIES ENGINE
+  const selectedSubmissionMonthName = submissionDateFilter.month === 'all'
+    ? ''
+    : (submissionDateOptions.months.find(([monthIndex]) => Number(monthIndex) === Number(submissionDateFilter.month))?.[1] || '');
+
+  const getInquiryName = (inquiry) => {
+    return inquiry.name
+      || inquiry.full_name
+      || inquiry.fullname
+      || inquiry.sender_name
+      || inquiry.user_name
+      || inquiry.username
+      || [inquiry.first_name, inquiry.last_name].filter(Boolean).join(' ')
+      || 'Unknown Sender';
+  };
+
   const processedInquiries = useMemo(() => {
+    const searchTerm = submissionSearch.trim().toLowerCase();
+
     return inquiriesList
       .filter(inq => {
         const dateObj = parseTargetDate(inq.created_at);
-        return isWithinTimeRange(dateObj, filterRange);
+        const searchableText = [
+          getInquiryName(inq),
+          inq.email,
+          inq.subject,
+          inq.message,
+        ].filter(Boolean).join(' ').toLowerCase();
+
+        return (
+          isWithinTimeRange(dateObj, filterRange) &&
+          matchesSubmissionDateFilter(dateObj) &&
+          (!searchTerm || searchableText.includes(searchTerm))
+        );
       })
       .sort((a, b) => {
         const dateA = parseTargetDate(a.created_at) || 0;
         const dateB = parseTargetDate(b.created_at) || 0;
         return dateB - dateA;
       });
-  }, [inquiriesList, filterRange]);
+  }, [inquiriesList, filterRange, submissionDateFilter, submissionSearch]);
 
   // 📜 PROCESSED ACTIVITY LOGS ENGINE
   const processedLogs = useMemo(() => {
@@ -219,10 +320,73 @@ export default function AnalyticsTablesTabs({ inquiriesList = [], activityLogs =
         {/* PANEL 1: RECENT CONTACT FORM SUBMISSIONS */}
         {activeTab === 'submissions' && (
           <div>
-            <div className="mb-4">
+            <div className="mb-4 flex flex-col gap-4">
               <p className="text-xs text-slate-400 font-semibold uppercase m-0">
                 Incoming direct inquiries and user messages sorted dynamically (newest records on top)
               </p>
+              <div className="flex flex-wrap items-center gap-2">
+                <select
+                  value={submissionDateFilter.year}
+                  onChange={(e) => updateSubmissionDateFilter('year', e.target.value)}
+                  className="bg-white border border-slate-200 text-[#002B5B] font-black text-[11px] uppercase tracking-wider py-2 px-3 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 cursor-pointer"
+                >
+                  <option value="all">Year</option>
+                  {submissionDateOptions.years.map((year) => (
+                    <option key={year} value={year}>{year}</option>
+                  ))}
+                </select>
+
+                <select
+                  value={submissionDateFilter.month}
+                  onChange={(e) => updateSubmissionDateFilter('month', e.target.value)}
+                  className="bg-white border border-slate-200 text-[#002B5B] font-black text-[11px] uppercase tracking-wider py-2 px-3 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 cursor-pointer"
+                >
+                  <option value="all">Month</option>
+                  {submissionDateOptions.months.map(([monthIndex, monthName]) => (
+                    <option key={monthIndex} value={monthIndex}>{monthName}</option>
+                  ))}
+                </select>
+
+                <select
+                  value={submissionDateFilter.day}
+                  onChange={(e) => updateSubmissionDateFilter('day', e.target.value)}
+                  className="bg-white border border-slate-200 text-[#002B5B] font-black text-[11px] uppercase tracking-wider py-2 px-3 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 cursor-pointer"
+                >
+                  <option value="all">Day</option>
+                  {submissionDateOptions.days.map((day) => (
+                    <option key={day} value={day}>{selectedSubmissionMonthName ? `${selectedSubmissionMonthName} ${day}` : `Day ${day}`}</option>
+                  ))}
+                </select>
+
+                <select
+                  value={submissionDateFilter.hour}
+                  onChange={(e) => updateSubmissionDateFilter('hour', e.target.value)}
+                  className="bg-white border border-slate-200 text-[#002B5B] font-black text-[11px] uppercase tracking-wider py-2 px-3 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 cursor-pointer"
+                >
+                  <option value="all">Time</option>
+                  {submissionDateOptions.hours.map((hour) => (
+                    <option key={hour} value={hour}>
+                      {new Date(2025, 0, 1, hour).toLocaleString(undefined, { hour: 'numeric', hour12: true }).replace(/\s/g, '')}
+                    </option>
+                  ))}
+                </select>
+
+                <input
+                  type="search"
+                  value={submissionSearch}
+                  onChange={(e) => setSubmissionSearch(e.target.value)}
+                  placeholder="Search submission"
+                  className="bg-white border border-slate-200 text-[#002B5B] placeholder:text-slate-400 font-bold text-[11px] tracking-wide py-2 px-3 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 min-w-[210px]"
+                />
+
+                <button
+                  type="button"
+                  onClick={resetSubmissionFilters}
+                  className="bg-[#002B5B] hover:bg-blue-900 text-white border border-[#002B5B] px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider shadow-sm transition-colors cursor-pointer"
+                >
+                  View All
+                </button>
+              </div>
             </div>
             <div className="overflow-x-auto border border-slate-200 rounded-2xl shadow-sm bg-white">
               <table className="min-w-full divide-y divide-slate-200 text-left text-sm text-slate-600">
@@ -244,7 +408,7 @@ export default function AnalyticsTablesTabs({ inquiriesList = [], activityLogs =
                     processedInquiries.map((inquiry) => (
                       <tr key={inquiry.id} className="hover:bg-slate-50/60 transition-colors align-top">
                         <td className="py-4 px-6">
-                          <p className="font-black text-[#002B5B] m-0 leading-tight">{inquiry.name}</p>
+                          <p className="font-black text-[#002B5B] m-0 leading-tight">{getInquiryName(inquiry)}</p>
                           <span className="text-xs font-mono font-semibold text-slate-400 mt-1 block select-all">
                             {inquiry.email}
                           </span>
@@ -255,14 +419,7 @@ export default function AnalyticsTablesTabs({ inquiriesList = [], activityLogs =
                           </div>
                         </td>
                         <td className="py-4 px-6 text-right font-mono font-bold text-xs text-slate-400 pt-5">
-                          {new Date(inquiry.created_at).toLocaleString(undefined, {
-                            month: 'short',
-                            day: 'numeric',
-                            year: 'numeric',
-                            hour: 'numeric',
-                            minute: '2-digit',
-                            hour12: true
-                          })}
+                          {formatTimelineDate(inquiry.created_at)}
                         </td>
                       </tr>
                     ))
