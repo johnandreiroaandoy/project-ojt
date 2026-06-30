@@ -4,6 +4,8 @@ function ReportsManagement() {
   const [reports, setReports] = useState([]);
   const [newReport, setNewReport] = useState({ title: '', year: new Date().getFullYear().toString(), month: '1' });
   const [selectedFile, setSelectedFile] = useState(null);
+  const [selectedFilePreviewUrl, setSelectedFilePreviewUrl] = useState('');
+  const [pendingDelete, setPendingDelete] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
@@ -20,6 +22,19 @@ function ReportsManagement() {
     { value: "10", label: "October" }, { value: "11", label: "November" }, { value: "12", label: "December" }
   ];
 
+  const getReportPdfUrl = (report) => {
+    if (!report?.href) return '';
+    if (/^https?:\/\//i.test(report.href)) return report.href;
+    return `http://localhost/backend-project-ojt/public/${report.href}`;
+  };
+
+  const getFileNameFromPath = (path) => {
+    if (!path) return '';
+    const cleanPath = String(path).split('?')[0].split('#')[0];
+    const fileName = cleanPath.split('/').pop();
+    return decodeURIComponent(fileName || '');
+  };
+
   // Helper trigger function to emit real-time status banners
   const showNotification = (message, type = 'success') => {
     setToast({ visible: true, message, type });
@@ -34,6 +49,18 @@ function ReportsManagement() {
       return () => clearTimeout(durationTimer);
     }
   }, [toast.visible]);
+
+  useEffect(() => {
+    if (!selectedFile) {
+      setSelectedFilePreviewUrl('');
+      return undefined;
+    }
+
+    const previewUrl = URL.createObjectURL(selectedFile);
+    setSelectedFilePreviewUrl(previewUrl);
+
+    return () => URL.revokeObjectURL(previewUrl);
+  }, [selectedFile]);
 
   // READ Lifecycle: Fetch active entries dynamically on initialization load
   useEffect(() => {
@@ -166,7 +193,11 @@ function ReportsManagement() {
       showNotification("❌ Cannot delete item: Missing valid database tracking identifier.", "error");
       return;
     }
-    if (!window.confirm("🚨 Delete this item entirely from the live database and file repository disk?")) return;
+    setPendingDelete({ id: reportId, index: currentIndex, title: reports[currentIndex]?.title || 'this report' });
+  };
+
+  const executeDeleteItem = async () => {
+    if (!pendingDelete) return;
 
     try {
       // 🔒 SECURITY UPDATE: Retrieve authorization token from your node session local buffer
@@ -178,14 +209,14 @@ function ReportsManagement() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}` // Protects structural data state changes
         },
-        body: JSON.stringify({ id: reportId })
+        body: JSON.stringify({ id: pendingDelete.id })
       });
       
       if (!res.ok) throw new Error(`HTTP Error Status: ${res.status}`);
       const result = await res.json();
 
       if (result.status === "success") {
-        setReports(prev => prev.filter((_, idx) => idx !== currentIndex));
+        setReports(prev => prev.filter((_, idx) => idx !== pendingDelete.index));
         showNotification("🗑️ Report eradicated from server system safely.", "success");
       } else {
         showNotification(`❌ Delete operational fault: ${result.message}`, "error");
@@ -193,6 +224,8 @@ function ReportsManagement() {
     } catch (err) {
       console.error(err);
       showNotification("❌ Access denied or network timeout executing database deletion loop.", "error");
+    } finally {
+      setPendingDelete(null);
     }
   };
 
@@ -215,6 +248,40 @@ function ReportsManagement() {
           >
             ✕
           </button>
+        </div>
+      )}
+
+      {pendingDelete && (
+        <div className="fixed inset-0 z-50 bg-slate-950/55 backdrop-blur-[1px] flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-emerald-50 border border-emerald-200 rounded-2xl shadow-2xl p-6 text-emerald-950">
+            <div className="flex items-start gap-3">
+              <div className="h-10 w-10 rounded-full bg-emerald-600 text-white flex items-center justify-center text-lg font-black shrink-0">
+                !
+              </div>
+              <div className="min-w-0">
+                <h3 className="text-sm font-black uppercase tracking-wider m-0">Confirm Report Delete</h3>
+                <p className="text-xs font-semibold text-emerald-800 mt-2 leading-relaxed">
+                  Delete {pendingDelete.title} from the database and file repository?
+                </p>
+              </div>
+            </div>
+            <div className="mt-6 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setPendingDelete(null)}
+                className="px-4 py-2 rounded-lg border border-emerald-200 bg-white text-emerald-800 text-xs font-black uppercase tracking-wider hover:bg-emerald-100 transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={executeDeleteItem}
+                className="px-4 py-2 rounded-lg bg-emerald-700 text-white text-xs font-black uppercase tracking-wider hover:bg-emerald-800 transition-colors shadow-sm cursor-pointer"
+              >
+                Confirm Delete
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -260,6 +327,11 @@ function ReportsManagement() {
               onChange={handleFileChange} 
               className="text-xs text-slate-500 file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-[10px] file:font-black file:uppercase file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer" 
             />
+            {selectedFilePreviewUrl && (
+              <span className="mt-3 inline-flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-emerald-700">
+                {selectedFile.name}
+              </span>
+            )}
           </div>
 
           <button type="submit" disabled={isUploading} className={`w-full text-white font-bold text-xs uppercase tracking-widest py-3 px-6 rounded-xl transition-all shadow-sm ${isUploading ? 'bg-slate-400 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700 cursor-pointer'}`}>
@@ -277,14 +349,22 @@ function ReportsManagement() {
           ) : reports.length === 0 ? (
             <p className="text-xs text-slate-400 font-bold uppercase text-center py-4">No records cataloged inside MySQL table system storage.</p>
           ) : (
-            reports.map((report, idx) => (
+            reports.map((report, idx) => {
+              const pdfUrl = getReportPdfUrl(report);
+
+              return (
               <div key={report.id || `rep-${idx}`} className="bg-white p-4 rounded-xl border border-slate-200/80 flex justify-between items-center gap-4 shadow-sm hover:border-blue-200 transition-colors">
                 <div className="min-w-0 flex-1">
-                  <a href={report.href ? `http://localhost/backend-project-ojt/public/${report.href}` : '#'} target="_blank" rel="noopener noreferrer" className="group block focus:outline-none">
-                    <h4 className="text-xs font-bold text-slate-700 group-hover:text-blue-600 group-hover:underline truncate transition-colors">
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-700 truncate transition-colors">
                       🔗 {report.title}
                     </h4>
-                  </a>
+                    {pdfUrl && (
+                      <span className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-[10px] font-black uppercase tracking-wider text-emerald-700">
+                        {getFileNameFromPath(report.href)}
+                      </span>
+                    )}
+                  </div>
                   <div className="flex gap-3 text-[9px] font-black text-slate-400 uppercase mt-1 tracking-wider">
                     <span className="bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">📅 Year: {report.year}</span>
                     <span className="bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded">📦 Size: {report.size || 'N/A'}</span>
@@ -294,7 +374,8 @@ function ReportsManagement() {
                   ✕ Delete
                 </button>
               </div>
-            ))
+              );
+            })
           )}
         </div>
       </div>
