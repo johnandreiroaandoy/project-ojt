@@ -149,7 +149,11 @@ function Header() {
         {/* UTILITY RIGHT SECTION CONTAINER */}
         <div className="flex items-center gap-4 lg:gap-6">
           {branding.searchIconSrc && (
-            <button className="p-2.5 hover:scale-135 hover:bg-gray-100 rounded-full transition-all">
+            <button 
+              type="button"
+              aria-label="Search form filters"
+              className="p-2.5 hover:scale-135 hover:bg-gray-100 rounded-full transition-all"
+            >
               <img src={branding.searchIconSrc} alt={branding.searchAlt || "Search"} className="w-5 h-5 opacity-100" />
             </button>
           )}
@@ -159,10 +163,9 @@ function Header() {
             </div>
           )}
 
-          
-
           {/* HAMBURGER BUTTON (MOBILE) */}
           <button 
+            type="button"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             className="flex flex-col justify-center items-center lg:hidden w-8 h-8 space-y-1.5 focus:outline-none z-50"
             aria-label="Toggle Menu"
@@ -189,9 +192,6 @@ function Header() {
               {link.name}
             </NavLink>
           ))}
-          
-          {/* 🟢 NEW: MOBILE DROPDOWN LOGIN TRIGGER */}
-          
         </div>
       </div>
 

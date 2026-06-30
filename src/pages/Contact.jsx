@@ -78,7 +78,6 @@ function Contact() {
 
   // INITIALIZE GOOGLE ON MOUNT
   useEffect(() => {
-    // Prevent execution if remote file properties have not cleanly completed mounting
     if (loading || !contactStatic) return;
 
     const initializeGoogleButton = () => {
@@ -166,7 +165,6 @@ function Contact() {
     );
   }
 
-  // Safe semantic mapping array derived from your unified schema
   const infoCards = [
     { id: 'phone', label: 'Telephone Line', value: contactStatic.phoneNumber || "N/A" },
     { id: 'email', label: 'Official Mailing Link', value: contactStatic.emails ? contactStatic.emails[0] : "N/A" },
@@ -256,14 +254,17 @@ function Contact() {
 
           {/* Full Name Input */}
           <div className="space-y-2">
-            <label className="text-[10px] font-black text-gray-400 uppercase ml-2">
+            <label htmlFor="contact_name" className="text-[10px] font-black text-gray-400 uppercase ml-2">
               {formLabels.name}
             </label>
             <input
+              id="contact_name"
+              name="name"
+              autoComplete="name"
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              disabled={userAvatar === ''} // Blocks input until Google authentication is verified
+              disabled={userAvatar === ''}
               placeholder={formLabels.namePlaceholder}
               className={`w-full p-4 rounded-xl border bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all font-medium text-sm ${
                 userAvatar === '' ? 'bg-gray-100/70 border-gray-200 text-gray-400 cursor-not-allowed select-none' : 'border-gray-200 text-gray-800'
@@ -275,7 +276,7 @@ function Contact() {
           {/* Locked Email Input Segment */}
           <div className="space-y-2 relative">
             <div className="flex justify-between items-center mr-2">
-              <label className="text-[10px] font-black text-gray-400 uppercase ml-2">
+              <label htmlFor="contact_email" className="text-[10px] font-black text-gray-400 uppercase ml-2">
                 {formLabels.email}
               </label>
               
@@ -291,9 +292,12 @@ function Contact() {
             </div>
 
             <input
+              id="contact_email"
+              name="email"
+              autoComplete="email"
               type="email"
               value={email}
-              readOnly // Completely prevents typing manipulation
+              readOnly
               placeholder={formLabels.emailPlaceholder}
               className={`w-full p-4 rounded-xl border focus:outline-none transition-all font-medium text-sm bg-gray-100/70 border-gray-200 text-gray-400 cursor-not-allowed select-none ${
                 verificationStatus === 'verified' ? 'bg-green-50/20 border-green-300 !text-green-800' : ''
@@ -304,13 +308,15 @@ function Contact() {
 
           {/* Message Text Area */}
           <div className="space-y-2">
-            <label className="text-[10px] font-black text-gray-400 uppercase ml-2">
+            <label htmlFor="contact_message" className="text-[10px] font-black text-gray-400 uppercase ml-2">
               {formLabels.message}
             </label>
             <textarea
+              id="contact_message"
+              name="message"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              disabled={userAvatar === ''} // Blocks field until Google session parameters are parsed
+              disabled={userAvatar === ''}
               placeholder={formLabels.messagePlaceholder}
               rows="4"
               className={`w-full p-4 rounded-xl border bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all resize-none font-medium text-sm ${

@@ -1,5 +1,5 @@
 // AnalyticsManagement.jsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import AnalyticsTablesTabs from './AnalyticsTablesTabs';
 
@@ -10,6 +10,9 @@ function AnalyticsManagement({ baseUrl, getAuthHeaders, onTotalInquiriesLoaded }
   const [inquiriesList, setInquiriesList] = useState([]);
   const [activityLogs, setActivityLogs] = useState([]);
   const [timelineData, setTimelineData] = useState([]);
+  
+  // 🔍 Table Filter State
+  const [tableSearchQuery, setTableSearchQuery] = useState('');
 
   useEffect(() => {
     const headers = getAuthHeaders();
@@ -26,13 +29,18 @@ function AnalyticsManagement({ baseUrl, getAuthHeaders, onTotalInquiriesLoaded }
         if (metricsData.inquiryHours) setInquiryHours(metricsData.inquiryHours);
         if (metricsData.totalInquiries !== undefined) onTotalInquiriesLoaded(metricsData.totalInquiries);
         if (inquiriesData.inquiries) setInquiriesList(inquiriesData.inquiries);
-        if (logsData.activityLogs) setActivityLogs(logsData.activityLogs);
+        if (logsData.activityLogs) setActivityLogs(logsData.activityLogs); // 🌟 Automatically stores user_email, ip_address, browser, device_type
         if (chartData.timelineData) setTimelineData(chartData.timelineData);
       })
       .catch(err => {
         console.error(err);
       });
   }, [baseUrl, getAuthHeaders, onTotalInquiriesLoaded]);
+
+  // Helper to check if a route belongs to administrative/auth paths
+  const isAdminOrAuthRoute = (pagename) => {
+    return pagename === '/admin' || pagename === '/contact/admin' || pagename === '/login';
+  };
 
   // 🟢 PARSING ENGINE: Processes actual database entries from dynamic server payloads
   const getProcessedTimelineData = () => {
@@ -41,11 +49,6 @@ function AnalyticsManagement({ baseUrl, getAuthHeaders, onTotalInquiriesLoaded }
       const safeStr = dateStr.includes('Z') || dateStr.includes('+') ? dateStr : dateStr.replace(' ', 'T');
       const d = new Date(safeStr);
       return isNaN(d.getTime()) ? new Date(dateStr) : d;
-    };
-
-    // Helper to check if a route belongs to administrative/auth paths
-    const isAdminOrAuthRoute = (pagename) => {
-      return pagename === '/admin' || pagename === '/contact/admin' || pagename === '/login';
     };
 
     // 1. DAY VIEW (Hourly tracking)
@@ -58,7 +61,7 @@ function AnalyticsManagement({ baseUrl, getAuthHeaders, onTotalInquiriesLoaded }
 
       if (activityLogs && activityLogs.length > 0) {
         activityLogs.forEach(log => {
-          if (isAdminOrAuthRoute(log.pagename)) return; // 👈 Excluded /login here
+          if (isAdminOrAuthRoute(log.pagename)) return;
           const dateObj = parseLogDate(log.accessed_at || log.created_at);
           if (dateObj) hourBuckets[dateObj.getHours()].traffic++;
         });
@@ -75,7 +78,7 @@ function AnalyticsManagement({ baseUrl, getAuthHeaders, onTotalInquiriesLoaded }
         inquiryHours.forEach(item => {
           const hour = item.hour_number !== undefined ? item.hour_number : item.hour;
           if (hour >= 0 && hour < 24) {
-            hourBuckets[hour].inquiries += Number(item.message_count || item.count || 0);
+            hourBuckets[hour].inquiries += Number(item.message_count || item.count || item.counter || 0);
           }
         });
       }
@@ -97,7 +100,7 @@ function AnalyticsManagement({ baseUrl, getAuthHeaders, onTotalInquiriesLoaded }
       
       if (activityLogs && activityLogs.length > 0) {
         activityLogs.forEach(item => {
-          if (isAdminOrAuthRoute(item.pagename)) return; // 👈 Excluded /login here
+          if (isAdminOrAuthRoute(item.pagename)) return;
           const dateObj = parseLogDate(item.accessed_at || item.created_at);
           if (dateObj) weekBuckets[dateObj.getDay()].traffic++;
         });
@@ -127,7 +130,7 @@ function AnalyticsManagement({ baseUrl, getAuthHeaders, onTotalInquiriesLoaded }
 
       if (activityLogs && activityLogs.length > 0) {
         activityLogs.forEach(item => {
-          if (isAdminOrAuthRoute(item.pagename)) return; // 👈 Excluded /login here
+          if (isAdminOrAuthRoute(item.pagename)) return;
           const dateObj = parseLogDate(item.accessed_at || item.created_at);
           if (dateObj) parseIntoBucket(dateObj, 'traffic');
         });
@@ -149,7 +152,7 @@ function AnalyticsManagement({ baseUrl, getAuthHeaders, onTotalInquiriesLoaded }
 
       if (activityLogs && activityLogs.length > 0) {
         activityLogs.forEach(item => {
-          if (isAdminOrAuthRoute(item.pagename)) return; // 👈 Excluded /login here
+          if (isAdminOrAuthRoute(item.pagename)) return;
           const dateObj = parseLogDate(item.accessed_at || item.created_at);
           if (dateObj) yearBuckets[dateObj.getMonth()].traffic++;
         });
@@ -167,10 +170,22 @@ function AnalyticsManagement({ baseUrl, getAuthHeaders, onTotalInquiriesLoaded }
     return [];
   };
 
-  // Filter out admin and login paths from the distribution bar chart data stream
-  const cleanBarChartData = analyticsRows.filter(
-    row => row.pagename !== '/admin' && row.pagename !== '/contact/admin' && row.pagename !== '/login'
-  );
+  // Filter out administrative / system routes from the charts stream
+  const cleanBarChartData = useMemo(() => {
+    return analyticsRows.filter(row => !isAdminOrAuthRoute(row.pagename));
+  }, [analyticsRows]);
+
+  // 🔍 ENHANCED FILTER ENGINE: Applies search query matches and sorts items highest to lowest
+  const processedTableRows = useMemo(() => {
+    return analyticsRows
+      .filter(row => {
+        const isNotAdminOrAuth = !isAdminOrAuthRoute(row.pagename);
+        const matchesSearch = row.pagename.toLowerCase().includes(tableSearchQuery.toLowerCase());
+        return isNotAdminOrAuth && matchesSearch;
+      })
+      .sort((a, b) => parseInt(b.counter) - parseInt(a.counter));
+  }, [analyticsRows, tableSearchQuery]);
+
   const activeChartData = getProcessedTimelineData();
 
   return (
@@ -220,7 +235,7 @@ function AnalyticsManagement({ baseUrl, getAuthHeaders, onTotalInquiriesLoaded }
         <div className="bg-slate-50/60 p-5 border border-slate-200/80 rounded-2xl flex flex-col justify-between">
           <div className="mb-4">
             <h4 className="text-sm font-black text-[#002B5B] uppercase tracking-tight m-0">User Traffic Timeline</h4>
-            <p className="text-[10px] text-slate-400 font-semibold uppercase mt-1">Active end-user sequential page views over time</p>
+            <p className="text-[10px] text-slate-400 font-semibold uppercase mt-1">Active end-user sequential page views ({timeframe} view)</p>
           </div>
           <div className="h-60 w-full">
             {activeChartData.length === 0 ? (
@@ -249,7 +264,7 @@ function AnalyticsManagement({ baseUrl, getAuthHeaders, onTotalInquiriesLoaded }
         <div className="bg-slate-50/60 p-5 border border-slate-200/80 rounded-2xl flex flex-col justify-between">
           <div className="mb-4">
             <h4 className="text-sm font-black text-[#10B981] uppercase tracking-tight m-0">Form Inquiries Timeline</h4>
-            <p className="text-[10px] text-slate-400 font-semibold uppercase mt-1">Direct conversion volume tracking counts</p>
+            <p className="text-[10px] text-slate-400 font-semibold uppercase mt-1">Direct conversion volume counts ({timeframe} view)</p>
           </div>
           <div className="h-60 w-full">
             {activeChartData.length === 0 ? (
@@ -277,10 +292,24 @@ function AnalyticsManagement({ baseUrl, getAuthHeaders, onTotalInquiriesLoaded }
 
       {/* 📊 SECTION 2: TRAFFIC DISTRIBUTION BREAKDOWN TABLE */}
       <div>
-        <div className="mb-4">
-          <h3 className="text-lg font-black text-[#002B5B] uppercase tracking-tight m-0">Traffic Distribution Breakdown</h3>
-          <p className="text-xs text-slate-400 font-semibold uppercase mt-1">Live metrics parsed directly from rows of website_visitors registry</p>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-4">
+          <div>
+            <h3 className="text-lg font-black text-[#002B5B] uppercase tracking-tight m-0">Traffic Distribution Breakdown</h3>
+            <p className="text-xs text-slate-400 font-semibold uppercase mt-1">Live metrics filtered down to end-user registry paths</p>
+          </div>
+          
+          {/* 🔍 REAL-TIME SEARCH BOX FILTER */}
+          <div className="w-full sm:w-64">
+            <input
+              type="text"
+              placeholder="🔍 Filter endpoint name..."
+              value={tableSearchQuery}
+              onChange={(e) => setTableSearchQuery(e.target.value)}
+              className="w-full bg-slate-50 border border-slate-200 text-slate-700 text-xs font-semibold px-3 py-2 rounded-xl focus:outline-none focus:border-[#002B5B] focus:bg-white transition-all shadow-sm"
+            />
+          </div>
         </div>
+
         <div className="overflow-x-auto border border-slate-200 rounded-2xl shadow-sm bg-white">
           <table className="min-w-full divide-y divide-slate-200 text-left text-sm text-slate-600">
             <thead className="bg-slate-50 text-slate-400 font-bold uppercase text-[10px] tracking-wider border-b border-slate-200">
@@ -291,12 +320,14 @@ function AnalyticsManagement({ baseUrl, getAuthHeaders, onTotalInquiriesLoaded }
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-medium">
-              {analyticsRows.length === 0 ? (
+              {processedTableRows.length === 0 ? (
                 <tr>
-                  <td colSpan="3" className="py-10 text-center font-bold text-slate-400 uppercase tracking-wider">No individual page activity logs collected yet.</td>
+                  <td colSpan="3" className="py-10 text-center font-bold text-slate-400 uppercase tracking-wider">
+                    {tableSearchQuery ? "No matching registered routes found." : "No individual page activity logs collected yet."}
+                  </td>
                 </tr>
               ) : (
-                analyticsRows.map((row, index) => (
+                processedTableRows.map((row, index) => (
                   <tr key={row.pagename} className="hover:bg-slate-50/80 transition-colors">
                     <td className="py-4 px-6 font-black text-slate-400">#{index + 1}</td>
                     <td className="py-4 px-6 font-semibold text-[#002B5B]">
@@ -311,7 +342,8 @@ function AnalyticsManagement({ baseUrl, getAuthHeaders, onTotalInquiriesLoaded }
         </div>
       </div>
 
-      {/* 📑 SECTION 3: RENDER EXTERNAL TABBED TABLES COMPONENT */}
+      {/* 🌟 📑 SECTION 3: RENDER SUB-TABBED TABLES */}
+      {/* Passing down activityLogs here ensures the new user_email, ip_address, browser, and device_type metrics reach your display dashboard layout */}
       <AnalyticsTablesTabs inquiriesList={inquiriesList} activityLogs={activityLogs} />
 
     </div>
