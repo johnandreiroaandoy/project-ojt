@@ -1,7 +1,15 @@
 // AnalyticsTablesTabs.jsx
 import React, { useState, useMemo } from 'react';
 
-export default function AnalyticsTablesTabs({ inquiriesList = [], activityLogs = [], userMatrix = [] }) {
+export default function AnalyticsTablesTabs({
+  inquiriesList = [],
+  activityLogs = [],
+  userMatrix = [],
+  // Backend pagination metadata for each table tab.
+  pagination = {},
+  // Requests a new backend page from AnalyticsManagement.
+  onPageChange = () => {},
+}) {
   const [activeTab, setActiveTab] = useState('submissions');
   const [filterRange, setFilterRange] = useState('all'); // 'all' | 'today' | 'week' | 'month'
   const [submissionDateFilter, setSubmissionDateFilter] = useState({
@@ -11,6 +19,49 @@ export default function AnalyticsTablesTabs({ inquiriesList = [], activityLogs =
     hour: 'all',
   });
   const [submissionSearch, setSubmissionSearch] = useState('');
+
+  // Shared Previous/Next footer. It uses backend totals instead of slicing data in React.
+  const PaginationControls = ({ meta, onPageChange }) => {
+    if (!meta || Number(meta.total_pages || 1) <= 1) {
+      return null;
+    }
+
+    const page = Number(meta.current_page || 1);
+    const perPage = Number(meta.per_page || 10);
+    const totalRows = Number(meta.total || 0);
+    const totalPages = Number(meta.total_pages || 1);
+    const startRow = totalRows === 0 ? 0 : ((page - 1) * perPage) + 1;
+    const endRow = Math.min(page * perPage, totalRows);
+
+    return (
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3 border-t border-slate-200 bg-slate-50">
+        <p className="m-0 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+          Showing {startRow}-{endRow} of {totalRows}
+        </p>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => onPageChange(Math.max(1, page - 1))}
+            disabled={page === 1}
+            className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-[11px] font-black uppercase tracking-wider text-[#002B5B] disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-100 transition-colors cursor-pointer"
+          >
+            Previous
+          </button>
+          <span className="min-w-[84px] text-center text-[11px] font-black uppercase tracking-wider text-slate-500">
+            Page {page} / {totalPages}
+          </span>
+          <button
+            type="button"
+            onClick={() => onPageChange(Math.min(totalPages, page + 1))}
+            disabled={page === totalPages}
+            className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-[11px] font-black uppercase tracking-wider text-[#002B5B] disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-100 transition-colors cursor-pointer"
+          >
+            Next
+          </button>
+        </div>
+      </div>
+    );
+  };
 
   // Helper date parsing framework to catch potential standard or non-standard SQL text values safely
   const parseTargetDate = (dateStr) => {
@@ -78,9 +129,101 @@ export default function AnalyticsTablesTabs({ inquiriesList = [], activityLogs =
   // Helper function to render distinct icons/styles for device categories
   const getDeviceBadgeStyles = (device) => {
     const d = String(device).toLowerCase();
-    if (d.includes('mobile')) return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+    if (d.includes('mobile') || d.includes('phone') || d.includes('android') || d.includes('iphone')) return 'bg-emerald-50 text-emerald-700 border-emerald-200';
     if (d.includes('tablet')) return 'bg-purple-50 text-purple-700 border-purple-200';
     return 'bg-indigo-50 text-indigo-700 border-indigo-200'; // Desktop default
+  };
+
+  const getOsBadgeStyles = (os) => {
+    const value = String(os).toLowerCase();
+    if (value.includes('windows')) return 'bg-sky-50 text-sky-700 border-sky-200';
+    if (value.includes('mac') || value.includes('ios') || value.includes('ipad')) return 'bg-slate-50 text-slate-700 border-slate-200';
+    if (value.includes('android')) return 'bg-lime-50 text-lime-700 border-lime-200';
+    if (value.includes('chrome')) return 'bg-yellow-50 text-yellow-700 border-yellow-200';
+    if (value.includes('linux')) return 'bg-zinc-50 text-zinc-700 border-zinc-200';
+    return 'bg-slate-100 text-slate-600 border-slate-200';
+  };
+
+  const inferMobileDeviceBrand = (model, userAgent) => {
+    const normalizedModel = String(model || '').trim();
+    const ua = String(userAgent || '');
+    const modelLower = normalizedModel.toLowerCase();
+    const uaLower = ua.toLowerCase();
+
+    if (/iphone/i.test(ua) || modelLower.includes('iphone')) return 'Apple iPhone';
+    if (/ipad/i.test(ua) || modelLower.includes('ipad')) return 'Apple iPad';
+    if (modelLower.includes('pixel') || uaLower.includes('pixel')) return 'Google';
+    if (/^(sm-|gt-|sch-|sgh-)/i.test(normalizedModel)) return 'Samsung';
+    if (/^(redmi|poco|mi\s|m20|m21|m22|m23|m24|m25)/i.test(normalizedModel) || uaLower.includes('xiaomi')) return 'Xiaomi';
+    if (/^(cph|p[a-z]{2,3}m|oppo)/i.test(normalizedModel) || uaLower.includes('oppo')) return 'OPPO';
+    if (/^(rmx|realme)/i.test(normalizedModel) || uaLower.includes('realme')) return 'Realme';
+    if (/^(vivo|v\d{4})/i.test(normalizedModel) || uaLower.includes('vivo')) return 'Vivo';
+    if (/^(huawei|ane-|lya-|vog-|mar-|yal-)/i.test(normalizedModel) || uaLower.includes('huawei')) return 'Huawei';
+    if (/^(honor|bkl-|col-|jsn-)/i.test(normalizedModel) || uaLower.includes('honor')) return 'Honor';
+    if (/^(moto|xt\d+)/i.test(normalizedModel) || uaLower.includes('motorola')) return 'Motorola';
+    if (/^(infinix|tecno|itel)/i.test(normalizedModel) || /(infinix|tecno|itel)/i.test(ua)) return normalizedModel.split(/\s+/)[0] || 'Mobile';
+
+    return '';
+  };
+
+  const buildClientDeviceLabel = (model, userAgent) => {
+    const normalizedModel = String(model || '').trim();
+    const ua = String(userAgent || '');
+    const isMobileOrTablet = /android|iphone|ipad|mobile|tablet/i.test(`${normalizedModel} ${ua}`);
+
+    if (!isMobileOrTablet && !normalizedModel) return '';
+
+    const brand = inferMobileDeviceBrand(normalizedModel, ua);
+    if (brand && normalizedModel && !normalizedModel.toLowerCase().startsWith(brand.toLowerCase())) {
+      return `${brand} ${normalizedModel}`.trim();
+    }
+
+    return brand || normalizedModel;
+  };
+
+  const isPlaceholderDeviceLabel = (device) => {
+    const value = String(device || '').trim().toLowerCase();
+    return value === ''
+      || value === '?0'
+      || value === 'k'
+      || value === 'wv'
+      || value === 'mobile'
+      || value === 'tablet';
+  };
+
+  const getDeviceFallbackLabel = (row) => {
+    const os = getOsLabel(row).toLowerCase();
+    if (os.includes('android')) return 'Android Phone';
+    if (os.includes('ipad')) return 'Apple iPad';
+    if (os.includes('ios')) return 'Apple iPhone';
+
+    const deviceCategory = String(row?.device_type || row?.device || '').toLowerCase();
+    if (deviceCategory.includes('tablet')) return 'Tablet';
+    if (deviceCategory.includes('mobile') || deviceCategory.includes('phone')) return 'Mobile Phone';
+
+    return 'Desktop/Laptop';
+  };
+
+  const getDeviceLabel = (row) => {
+    const rawDevice = row?.device_model
+      || row?.device_name
+      || row?.device_brand_version
+      || row?.device_type
+      || row?.device
+      || 'Desktop';
+
+    if (isPlaceholderDeviceLabel(rawDevice)) {
+      return getDeviceFallbackLabel(row);
+    }
+
+    return buildClientDeviceLabel(rawDevice, row?.user_agent || row?.userAgent) || rawDevice;
+  };
+
+  const getOsLabel = (row) => {
+    return row?.os
+      || row?.operating_system
+      || row?.platform
+      || 'Unknown';
   };
 
   const submissionDateOptions = useMemo(() => ({
@@ -198,6 +341,17 @@ export default function AnalyticsTablesTabs({ inquiriesList = [], activityLogs =
     // Check if userMatrix contains true matrix rows (has hit counts). 
     // If it's unpopulated but we have raw activityLogs, we construct the grid on-the-fly!
     const hasValidMatrixData = userMatrix && userMatrix.length > 0 && ('root_hits' in userMatrix[0]);
+    const latestLogByIp = activityLogs.reduce((latestLogs, log) => {
+      const ip = log.ip_address || '127.0.0.1';
+      const logDate = log.accessed_at || log.created_at;
+      const currentLatestDate = latestLogs[ip]?.accessed_at || latestLogs[ip]?.created_at;
+
+      if (!latestLogs[ip] || new Date(logDate) > new Date(currentLatestDate)) {
+        latestLogs[ip] = log;
+      }
+
+      return latestLogs;
+    }, {});
 
     if (!hasValidMatrixData && activityLogs.length > 0) {
       const matrixMap = {};
@@ -216,7 +370,8 @@ export default function AnalyticsTablesTabs({ inquiriesList = [], activityLogs =
             reports_hits: 0,
             contact_hits: 0,
             browser: log.browser || 'Chrome',
-            device_type: log.device_type || 'Desktop',
+            device_type: getDeviceLabel(log),
+            os: getOsLabel(log),
             last_active: logDate,
           };
         }
@@ -224,6 +379,9 @@ export default function AnalyticsTablesTabs({ inquiriesList = [], activityLogs =
         // Keep the latest timestamp observed for this user client
         if (new Date(logDate) > new Date(matrixMap[ip].last_active)) {
           matrixMap[ip].last_active = logDate;
+          matrixMap[ip].browser = log.browser || matrixMap[ip].browser;
+          matrixMap[ip].device_type = getDeviceLabel(log);
+          matrixMap[ip].os = getOsLabel(log);
         }
 
         // Standardized route increment matching your database /pagename targets
@@ -241,10 +399,24 @@ export default function AnalyticsTablesTabs({ inquiriesList = [], activityLogs =
     }
 
     // Direct fallback array loop if backend query was already serving matrix-pivoted models
-    return userMatrix.filter((row) => {
-      const dateObj = parseTargetDate(row.last_active || row.accessed_at);
-      return isWithinTimeRange(dateObj, filterRange);
-    });
+    return userMatrix
+      .map((row) => {
+        const latestLog = latestLogByIp[row.ip_address];
+
+        if (!latestLog) return row;
+
+        return {
+          ...row,
+          browser: latestLog.browser || row.browser,
+          device_type: getDeviceLabel(latestLog),
+          os: getOsLabel(latestLog),
+          last_active: latestLog.accessed_at || latestLog.created_at || row.last_active,
+        };
+      })
+      .filter((row) => {
+        const dateObj = parseTargetDate(row.last_active || row.accessed_at);
+        return isWithinTimeRange(dateObj, filterRange);
+      });
   }, [userMatrix, activityLogs, filterRange]);
 
   return (
@@ -261,7 +433,7 @@ export default function AnalyticsTablesTabs({ inquiriesList = [], activityLogs =
               activeTab === 'submissions' ? 'text-[#002B5B]' : 'text-slate-400 hover:text-slate-600'
             }`}
           >
-            {`📩 Submissions (${processedInquiries.length})`}
+            {`📩 Submissions (${pagination.inquiries?.total ?? processedInquiries.length})`}
             {activeTab === 'submissions' && (
               <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#002B5B] rounded-full" />
             )}
@@ -273,7 +445,7 @@ export default function AnalyticsTablesTabs({ inquiriesList = [], activityLogs =
               activeTab === 'logs' ? 'text-[#002B5B]' : 'text-slate-400 hover:text-slate-600'
             }`}
           >
-            {`📜 System Logs (${processedLogs.length})`}
+            {`📜 System Logs (${pagination.activityLogs?.total ?? processedLogs.length})`}
             {activeTab === 'logs' && (
               <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#002B5B] rounded-full" />
             )}
@@ -285,7 +457,7 @@ export default function AnalyticsTablesTabs({ inquiriesList = [], activityLogs =
               activeTab === 'matrix' ? 'text-[#002B5B]' : 'text-slate-400 hover:text-slate-600'
             }`}
           >
-            {`👥 User Matrix (${processedMatrix.length})`}
+            {`👥 User Matrix (${pagination.userMatrix?.total ?? processedMatrix.length})`}
             {activeTab === 'matrix' && (
               <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#002B5B] rounded-full" />
             )}
@@ -426,6 +598,10 @@ export default function AnalyticsTablesTabs({ inquiriesList = [], activityLogs =
                   )}
                 </tbody>
               </table>
+              <PaginationControls
+                meta={pagination.inquiries}
+                onPageChange={(page) => onPageChange('inquiries', page)}
+              />
             </div>
           </div>
         )}
@@ -445,15 +621,16 @@ export default function AnalyticsTablesTabs({ inquiriesList = [], activityLogs =
                     <th className="py-3.5 px-4 text-center w-[10%]">Ref</th>
                     <th className="py-3.5 px-6 w-[25%]">Page Target</th>
                     <th className="py-3.5 px-6 w-[18%]">IP Address</th>
-                    <th className="py-3.5 px-6 w-[15%]">Browser</th>
+                    <th className="py-3.5 px-6 w-[13%]">Browser</th>
                     <th className="py-3.5 px-6 w-[15%]">Device</th>
-                    <th className="py-3.5 px-6 text-right w-[17%]">Timestamp</th>
+                    <th className="py-3.5 px-6 w-[12%]">OS</th>
+                    <th className="py-3.5 px-6 text-right w-[15%]">Timestamp</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-medium">
                   {processedLogs.length === 0 ? (
                     <tr>
-                      <td colSpan="6" className="py-12 text-center font-bold text-slate-400 uppercase tracking-wider">
+                      <td colSpan="7" className="py-12 text-center font-bold text-slate-400 uppercase tracking-wider">
                         📜 No diagnostic routing entries captured within this time boundary.
                       </td>
                     </tr>
@@ -478,8 +655,19 @@ export default function AnalyticsTablesTabs({ inquiriesList = [], activityLogs =
                           </span>
                         </td>
                         <td className="py-3.5 px-6">
-                          <span className={`inline-block border px-2 py-0.5 rounded-md text-[11px] font-bold tracking-wide ${getDeviceBadgeStyles(log.device_type)}`}>
-                            {log.device_type || 'Desktop'}
+                          <span
+                            title={getDeviceLabel(log)}
+                            className={`inline-block max-w-[180px] truncate border px-2 py-0.5 rounded-md text-[11px] font-bold tracking-wide ${getDeviceBadgeStyles(getDeviceLabel(log))}`}
+                          >
+                            {getDeviceLabel(log)}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-6">
+                          <span
+                            title={getOsLabel(log)}
+                            className={`inline-block max-w-[120px] truncate border px-2 py-0.5 rounded-md text-[11px] font-bold tracking-wide ${getOsBadgeStyles(getOsLabel(log))}`}
+                          >
+                            {getOsLabel(log)}
                           </span>
                         </td>
                         <td className="py-3.5 px-6 text-right font-mono text-[11px] text-slate-400 font-bold">
@@ -497,6 +685,10 @@ export default function AnalyticsTablesTabs({ inquiriesList = [], activityLogs =
                   )}
                 </tbody>
               </table>
+              <PaginationControls
+                meta={pagination.activityLogs}
+                onPageChange={(page) => onPageChange('activityLogs', page)}
+              />
             </div>
           </div>
         )}
@@ -513,21 +705,22 @@ export default function AnalyticsTablesTabs({ inquiriesList = [], activityLogs =
               <table className="min-w-full divide-y divide-slate-200 text-left text-sm text-slate-600">
                 <thead className="bg-slate-50 text-slate-400 font-bold uppercase text-[10px] tracking-wider border-b border-slate-200">
                   <tr>
-                    <th className="py-3.5 px-6 w-[18%]">Visitor IP Address</th>
+                    <th className="py-3 px-5 w-[10%]">Visitor IP Address</th>
                     <th className="py-3.5 px-4 text-center w-[9%]">Root</th>
                     <th className="py-3.5 px-4 text-center w-[9%]">Mandates</th>
                     <th className="py-3.5 px-4 text-center w-[9%]">Services</th>
                     <th className="py-3.5 px-4 text-center w-[9%]">Reports</th>
                     <th className="py-3.5 px-4 text-center w-[9%]">Contact</th>
-                    <th className="py-3.5 px-4 text-center w-[10%]">Browser</th>
-                    <th className="py-3.5 px-4 text-center w-[10%]">Device</th>
-                    <th className="py-3.5 px-6 text-right w-[17%]">Last Active</th>
+                    <th className="py-3.5 px-4 text-center w-[9%]">Browser</th>
+                    <th className="py-3.5 px-4 text-center w-[13%]">Device</th>
+                    <th className="py-3.5 px-4 text-center w-[9%]">OS</th>
+                    <th className="py-3.5 px-6 text-right w-[15%]">Last Active</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-medium">
                   {processedMatrix.length === 0 ? (
                     <tr>
-                      <td colSpan="9" className="py-12 text-center font-bold text-slate-400 uppercase tracking-wider">
+                      <td colSpan="10" className="py-12 text-center font-bold text-slate-400 uppercase tracking-wider">
                         👥 No visitor matrix telemetry calculated within this calendar range.
                       </td>
                     </tr>
@@ -573,8 +766,20 @@ export default function AnalyticsTablesTabs({ inquiriesList = [], activityLogs =
                         </td>
 
                         <td className="py-3.5 px-4 text-center">
-                          <span className={`inline-block border px-2 py-0.5 rounded-md text-[10px] font-bold tracking-wide ${getDeviceBadgeStyles(row.device_type)}`}>
-                            {row.device_type || 'Desktop'}
+                          <span
+                            title={getDeviceLabel(row)}
+                            className={`inline-block max-w-[180px] truncate border px-2 py-0.5 rounded-md text-[10px] font-bold tracking-wide ${getDeviceBadgeStyles(getDeviceLabel(row))}`}
+                          >
+                            {getDeviceLabel(row)}
+                          </span>
+                        </td>
+
+                        <td className="py-3.5 px-4 text-center">
+                          <span
+                            title={getOsLabel(row)}
+                            className={`inline-block max-w-[120px] truncate border px-2 py-0.5 rounded-md text-[10px] font-bold tracking-wide ${getOsBadgeStyles(getOsLabel(row))}`}
+                          >
+                            {getOsLabel(row)}
                           </span>
                         </td>
 
@@ -594,6 +799,10 @@ export default function AnalyticsTablesTabs({ inquiriesList = [], activityLogs =
                   )}
                 </tbody>
               </table>
+              <PaginationControls
+                meta={pagination.userMatrix}
+                onPageChange={(page) => onPageChange('userMatrix', page)}
+              />
             </div>
           </div>
         )}

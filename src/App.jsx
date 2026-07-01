@@ -34,23 +34,65 @@ function AppContent() {
      👥 BACKGROUND VISITOR TRACKING INITIALIZATION
   ========================================================== */
   useEffect(() => {
-    // 🟢 UPDATED: Extract the clean page name (e.g., "/home", "/reports") or default to "root"
+    let cancelled = false;
+
+    // Extract the clean page name (e.g., "/home", "/reports") or default to "root"
     const currentPath = location.pathname === '/' ? 'root' : location.pathname;
 
-    // 🟢 UPDATED: Append the current page name as a URL parameter to your request string
-    fetch(`${baseUrl}/api/analytics/track-visit?pagename=${encodeURIComponent(currentPath)}`)
-      .then(res => res.json())
-      .then(result => {
-        if (result.status === 'success') {
-          console.log(`📊 Page Analytics: Counted visit for [${currentPath}]. Lifetime hits: ${result.total_visitors}`);
-        }
-      })
-      .catch(err => {
-        // Log locally without breaking the user's interface experience if backend drops
-        console.warn("Analytics pipeline temporarily unreachable:", err);
-      });
-  }, [baseUrl, location.pathname]); // 🟢 UPDATED: Adding location.pathname triggers this tracking hook every time the route changes!
+    const trackVisit = async () => {
+      let clientPlatform = navigator.platform || '';
+      let clientDeviceModel = '';
+      let clientIsMobile = /android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent || '');
 
+      if (navigator.userAgentData?.getHighEntropyValues) {
+        try {
+          const hints = await navigator.userAgentData.getHighEntropyValues(['model', 'platform']);
+          clientPlatform = hints.platform || clientPlatform;
+          clientDeviceModel = hints.model || '';
+          clientIsMobile = Boolean(navigator.userAgentData.mobile) || clientIsMobile;
+        } catch {
+          clientPlatform = navigator.platform || '';
+        }
+      }
+
+      if (cancelled) return;
+
+      const params = new URLSearchParams({ pagename: currentPath });
+      const headers = {};
+
+      if (clientPlatform) {
+        params.set('platform', clientPlatform);
+        headers['X-Client-Platform'] = clientPlatform;
+      }
+
+      if (clientIsMobile) {
+        params.set('mobile', 'true');
+        headers['X-Client-Is-Mobile'] = 'true';
+      }
+
+      if (clientDeviceModel) {
+        params.set('device_model', clientDeviceModel);
+        headers['X-Client-Device-Model'] = clientDeviceModel;
+      }
+
+      fetch(`${baseUrl}/api/analytics/track-visit?${params.toString()}`, { headers })
+        .then(res => res.json())
+        .then(result => {
+          if (result.status === 'success') {
+            console.log(`Page Analytics: Counted visit for [${currentPath}]. Lifetime hits: ${result.total_visitors}`);
+          }
+        })
+        .catch(err => {
+          console.warn("Analytics pipeline temporarily unreachable:", err);
+        });
+    };
+
+    trackVisit();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [baseUrl, location.pathname]);
   // 🛡️ CONDITIONAL RENDER RULE: Hide the public layout elements if path starts with '/admin' OR matches '/login'
   const isAdminOrLoginPage = location.pathname.startsWith('/admin') || location.pathname === '/login';
 

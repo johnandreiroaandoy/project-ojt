@@ -3,13 +3,31 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import AnalyticsTablesTabs from './AnalyticsTablesTabs';
 
+// The backend endpoints return 10 records per page for each analytics table.
+const TABLE_ROWS_PER_PAGE = 10;
+
 function AnalyticsManagement({ baseUrl, getAuthHeaders, onTotalInquiriesLoaded }) {
   const [timeframe, setTimeframe] = useState('day');
   const [analyticsRows, setAnalyticsRows] = useState([]);
   const [inquiryHours, setInquiryHours] = useState([]);
   const [inquiriesList, setInquiriesList] = useState([]);
   const [activityLogs, setActivityLogs] = useState([]);
+  const [userMatrix, setUserMatrix] = useState([]);
   const [timelineData, setTimelineData] = useState([]);
+
+  // Current backend page for each analytics table tab.
+  const [tablePages, setTablePages] = useState({
+    inquiries: 1,
+    activityLogs: 1,
+    userMatrix: 1,
+  });
+
+  // Pagination metadata returned by PHP: current_page, per_page, total, total_pages.
+  const [tablePagination, setTablePagination] = useState({
+    inquiries: null,
+    activityLogs: null,
+    userMatrix: null,
+  });
   
   // 🔍 Table Filter State
   const [tableSearchQuery, setTableSearchQuery] = useState('');
@@ -20,22 +38,39 @@ function AnalyticsManagement({ baseUrl, getAuthHeaders, onTotalInquiriesLoaded }
 
     Promise.all([
       fetch(`${baseUrl}/api/analytics/metrics`, { headers }).then(res => res.json()).catch(() => ({ metrics: [], inquiryHours: [], totalInquiries: 0 })),
-      fetch(`${baseUrl}/api/analytics/inquiries`, { headers }).then(res => res.json()).catch(() => ({ inquiries: [] })),
-      fetch(`${baseUrl}/api/analytics/activity-logs`, { headers }).then(res => res.json()).catch(() => ({ activityLogs: [] })),
+      // These three table endpoints are paginated in PHP, so React only receives one page at a time.
+      fetch(`${baseUrl}/api/analytics/inquiries?page=${tablePages.inquiries}&per_page=${TABLE_ROWS_PER_PAGE}`, { headers }).then(res => res.json()).catch(() => ({ inquiries: [] })),
+      fetch(`${baseUrl}/api/analytics/activity-logs?page=${tablePages.activityLogs}&per_page=${TABLE_ROWS_PER_PAGE}`, { headers }).then(res => res.json()).catch(() => ({ activityLogs: [] })),
+      fetch(`${baseUrl}/api/analytics/user-matrix?page=${tablePages.userMatrix}&per_page=${TABLE_ROWS_PER_PAGE}`, { headers }).then(res => res.json()).catch(() => ({ userMatrix: [] })),
       fetch(`${baseUrl}/api/analytics/chart-timeline`, { headers }).then(res => res.json()).catch(() => ({ timelineData: [] }))
     ])
-      .then(([metricsData, inquiriesData, logsData, chartData]) => {
+      .then(([metricsData, inquiriesData, logsData, matrixData, chartData]) => {
         if (metricsData.metrics) setAnalyticsRows(metricsData.metrics);
         if (metricsData.inquiryHours) setInquiryHours(metricsData.inquiryHours);
         if (metricsData.totalInquiries !== undefined) onTotalInquiriesLoaded(metricsData.totalInquiries);
         if (inquiriesData.inquiries) setInquiriesList(inquiriesData.inquiries);
         if (logsData.activityLogs) setActivityLogs(logsData.activityLogs); // 🌟 Automatically stores user_email, ip_address, browser, device_type
+        if (matrixData.userMatrix) setUserMatrix(matrixData.userMatrix);
+        // Store page totals separately so the table component can render Previous/Next buttons.
+        setTablePagination({
+          inquiries: inquiriesData.inquiriesPagination || null,
+          activityLogs: logsData.activityLogsPagination || null,
+          userMatrix: matrixData.userMatrixPagination || null,
+        });
         if (chartData.timelineData) setTimelineData(chartData.timelineData);
       })
       .catch(err => {
         console.error(err);
       });
-  }, [baseUrl, getAuthHeaders, onTotalInquiriesLoaded]);
+  }, [baseUrl, getAuthHeaders, onTotalInquiriesLoaded, tablePages]);
+
+  // Called by AnalyticsTablesTabs when a user clicks Previous or Next.
+  const handleTablePageChange = (key, page) => {
+    setTablePages((current) => ({
+      ...current,
+      [key]: page,
+    }));
+  };
 
   // Helper to check if a route belongs to administrative/auth paths
   const isAdminOrAuthRoute = (pagename) => {
@@ -344,7 +379,13 @@ function AnalyticsManagement({ baseUrl, getAuthHeaders, onTotalInquiriesLoaded }
 
       {/* 🌟 📑 SECTION 3: RENDER SUB-TABBED TABLES */}
       {/* Passing down activityLogs here ensures the new user_email, ip_address, browser, and device_type metrics reach your display dashboard layout */}
-      <AnalyticsTablesTabs inquiriesList={inquiriesList} activityLogs={activityLogs} />
+      <AnalyticsTablesTabs
+        inquiriesList={inquiriesList}
+        activityLogs={activityLogs}
+        userMatrix={userMatrix}
+        pagination={tablePagination}
+        onPageChange={handleTablePageChange}
+      />
 
     </div>
   );
