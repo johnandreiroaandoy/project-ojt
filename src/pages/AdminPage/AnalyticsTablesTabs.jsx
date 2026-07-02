@@ -226,6 +226,15 @@ export default function AnalyticsTablesTabs({
       || 'Unknown';
   };
 
+  const getClientMatrixKey = (row) => {
+    const ip = row?.ip_address || '127.0.0.1';
+    const browser = String(row?.browser || 'Unknown').trim().toLowerCase();
+    const device = String(getDeviceLabel(row)).trim().toLowerCase();
+    const os = String(getOsLabel(row)).trim().toLowerCase();
+
+    return `${ip}|${browser}|${device}|${os}`;
+  };
+
   const submissionDateOptions = useMemo(() => ({
     years: Array.from({ length: 12 }, (_, index) => 2015 + index),
     months: [
@@ -341,13 +350,15 @@ export default function AnalyticsTablesTabs({
     // Check if userMatrix contains true matrix rows (has hit counts). 
     // If it's unpopulated but we have raw activityLogs, we construct the grid on-the-fly!
     const hasValidMatrixData = userMatrix && userMatrix.length > 0 && ('root_hits' in userMatrix[0]);
-    const latestLogByIp = activityLogs.reduce((latestLogs, log) => {
-      const ip = log.ip_address || '127.0.0.1';
-      const logDate = log.accessed_at || log.created_at;
-      const currentLatestDate = latestLogs[ip]?.accessed_at || latestLogs[ip]?.created_at;
+    const getRowTime = (row) => {
+      const date = parseTargetDate(row?.last_active || row?.accessed_at || row?.created_at);
+      return date && !isNaN(date.getTime()) ? date.getTime() : 0;
+    };
+    const latestLogByClient = activityLogs.reduce((latestLogs, log) => {
+      const clientKey = getClientMatrixKey(log);
 
-      if (!latestLogs[ip] || new Date(logDate) > new Date(currentLatestDate)) {
-        latestLogs[ip] = log;
+      if (!latestLogs[clientKey] || getRowTime(log) > getRowTime(latestLogs[clientKey])) {
+        latestLogs[clientKey] = log;
       }
 
       return latestLogs;
@@ -358,11 +369,12 @@ export default function AnalyticsTablesTabs({
 
       activityLogs.forEach((log) => {
         const ip = log.ip_address || '127.0.0.1';
+        const clientKey = getClientMatrixKey(log);
         const page = String(log.pagename || 'root').toLowerCase();
         const logDate = log.accessed_at || log.created_at;
 
-        if (!matrixMap[ip]) {
-          matrixMap[ip] = {
+        if (!matrixMap[clientKey]) {
+          matrixMap[clientKey] = {
             ip_address: ip,
             root_hits: 0,
             mandates_hits: 0,
@@ -377,19 +389,19 @@ export default function AnalyticsTablesTabs({
         }
 
         // Keep the latest timestamp observed for this user client
-        if (new Date(logDate) > new Date(matrixMap[ip].last_active)) {
-          matrixMap[ip].last_active = logDate;
-          matrixMap[ip].browser = log.browser || matrixMap[ip].browser;
-          matrixMap[ip].device_type = getDeviceLabel(log);
-          matrixMap[ip].os = getOsLabel(log);
+        if (new Date(logDate) > new Date(matrixMap[clientKey].last_active)) {
+          matrixMap[clientKey].last_active = logDate;
+          matrixMap[clientKey].browser = log.browser || matrixMap[clientKey].browser;
+          matrixMap[clientKey].device_type = getDeviceLabel(log);
+          matrixMap[clientKey].os = getOsLabel(log);
         }
 
         // Standardized route increment matching your database /pagename targets
-        if (page === 'root' || page === '/' || page === 'home') matrixMap[ip].root_hits++;
-        else if (page.includes('mandate')) matrixMap[ip].mandates_hits++;
-        else if (page.includes('service')) matrixMap[ip].services_hits++;
-        else if (page.includes('report')) matrixMap[ip].reports_hits++;
-        else if (page.includes('contact')) matrixMap[ip].contact_hits++;
+        if (page === 'root' || page === '/' || page === 'home') matrixMap[clientKey].root_hits++;
+        else if (page.includes('mandate')) matrixMap[clientKey].mandates_hits++;
+        else if (page.includes('service')) matrixMap[clientKey].services_hits++;
+        else if (page.includes('report')) matrixMap[clientKey].reports_hits++;
+        else if (page.includes('contact')) matrixMap[clientKey].contact_hits++;
       });
 
       return Object.values(matrixMap).filter((row) => {
@@ -399,11 +411,11 @@ export default function AnalyticsTablesTabs({
     }
 
     // Direct fallback array loop if backend query was already serving matrix-pivoted models
-    return userMatrix
+    const mergedMatrix = userMatrix
       .map((row) => {
-        const latestLog = latestLogByIp[row.ip_address];
+        const latestLog = latestLogByClient[getClientMatrixKey(row)];
 
-        if (!latestLog) return row;
+        if (!latestLog || getRowTime(row) > getRowTime(latestLog)) return row;
 
         return {
           ...row,
@@ -413,10 +425,73 @@ export default function AnalyticsTablesTabs({
           last_active: latestLog.accessed_at || latestLog.created_at || row.last_active,
         };
       })
+      .reduce((rowsByClient, row) => {
+        const clientKey = getClientMatrixKey(row);
+        const ip = row.ip_address || '127.0.0.1';
+        const existingRow = rowsByClient[clientKey];
+
+        if (!existingRow) {
+          rowsByClient[clientKey] = { ...row };
+          return rowsByClient;
+        }
+
+        const latestMetadataRow = getRowTime(row) >= getRowTime(existingRow) ? row : existingRow;
+
+        rowsByClient[clientKey] = {
+          ...existingRow,
+          ...latestMetadataRow,
+          ip_address: ip,
+          root_hits: (parseInt(existingRow.root_hits) || 0) + (parseInt(row.root_hits) || 0),
+          mandates_hits: (parseInt(existingRow.mandates_hits) || 0) + (parseInt(row.mandates_hits) || 0),
+          services_hits: (parseInt(existingRow.services_hits) || 0) + (parseInt(row.services_hits) || 0),
+          reports_hits: (parseInt(existingRow.reports_hits) || 0) + (parseInt(row.reports_hits) || 0),
+          contact_hits: (parseInt(existingRow.contact_hits) || 0) + (parseInt(row.contact_hits) || 0),
+          total_combined_hits: (parseInt(existingRow.total_combined_hits) || 0) + (parseInt(row.total_combined_hits) || 0),
+        };
+
+        return rowsByClient;
+      }, {});
+
+    activityLogs.forEach((log) => {
+      const clientKey = getClientMatrixKey(log);
+      if (mergedMatrix[clientKey]) return;
+
+      const page = String(log.pagename || 'root').toLowerCase();
+      const logDate = log.accessed_at || log.created_at;
+
+      mergedMatrix[clientKey] = mergedMatrix[clientKey] || {
+        ip_address: log.ip_address || '127.0.0.1',
+        root_hits: 0,
+        mandates_hits: 0,
+        services_hits: 0,
+        reports_hits: 0,
+        contact_hits: 0,
+        total_combined_hits: 0,
+        browser: log.browser || 'Unknown',
+        device_type: getDeviceLabel(log),
+        os: getOsLabel(log),
+        last_active: logDate,
+      };
+
+      if (new Date(logDate) > new Date(mergedMatrix[clientKey].last_active)) {
+        mergedMatrix[clientKey].last_active = logDate;
+      }
+
+      if (page === 'root' || page === '/' || page === 'home') mergedMatrix[clientKey].root_hits++;
+      else if (page.includes('mandate')) mergedMatrix[clientKey].mandates_hits++;
+      else if (page.includes('service')) mergedMatrix[clientKey].services_hits++;
+      else if (page.includes('report')) mergedMatrix[clientKey].reports_hits++;
+      else if (page.includes('contact')) mergedMatrix[clientKey].contact_hits++;
+
+      mergedMatrix[clientKey].total_combined_hits++;
+    });
+
+    return Object.values(mergedMatrix)
       .filter((row) => {
         const dateObj = parseTargetDate(row.last_active || row.accessed_at);
         return isWithinTimeRange(dateObj, filterRange);
-      });
+      })
+      .sort((a, b) => getRowTime(b) - getRowTime(a));
   }, [userMatrix, activityLogs, filterRange]);
 
   return (
@@ -726,7 +801,7 @@ export default function AnalyticsTablesTabs({
                     </tr>
                   ) : (
                     processedMatrix.map((row, idx) => (
-                      <tr key={row.ip_address || idx} className="hover:bg-slate-50/60 transition-colors align-middle text-xs text-slate-600">
+                      <tr key={`${row.ip_address || 'unknown'}-${row.browser || 'browser'}-${row.device_type || 'device'}-${row.os || 'os'}-${idx}`} className="hover:bg-slate-50/60 transition-colors align-middle text-xs text-slate-600">
                         
                         {/* Visitor Identifier Address */}
                         <td className="py-3.5 px-6 font-mono font-bold text-slate-700 select-all">
